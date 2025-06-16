@@ -16,7 +16,7 @@ from processing.cleaning import clean_dataframe_prices
 from processing.embeddings import generate_dataframe_embeddings
 from analysis.similarity import match_products
 from export.export_excel import export_to_excel
-from email.send_email import send_email
+from src.email.send_email import send_email
 
 # COMMAND ----------
 
@@ -40,7 +40,9 @@ def save_to_delta(df, table_name, mode="overwrite"):
 try:
     # 2. Scraping Magalu
     print("Iniciando scraping Magazine Luiza")
-    df_magalu = scrape_magalu(spark, SCRAPING_CONFIG['magalu']['categories'], paginas=17)
+    print(f"DEBUG: Tipo de SCRAPING_CONFIG['magalu']['categories']: {type(SCRAPING_CONFIG['magalu']['categories'])}")
+    print(f"DEBUG: Conteúdo de SCRAPING_CONFIG['magalu']['categories']: {SCRAPING_CONFIG['magalu']['categories']}")
+    df_magalu = scrape_magalu(spark=spark, categorias_a_raspar=SCRAPING_CONFIG['magalu']['categories'], paginas=17)
     df_magalu = df_magalu.withColumn("source", lit("magalu")) \
                         .withColumn("extraction_date", current_timestamp())
     

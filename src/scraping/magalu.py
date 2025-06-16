@@ -80,7 +80,7 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17): # Ajustado 
 
     return produtos
 
-def scrape_magalu(spark: SparkSession, categorias_a_raspar=None, paginas=17): # Adicionado spark como argumento, e paginas=17 como default
+def scrape_magalu(spark: SparkSession, categorias_a_raspar=None, paginas=17): # Corrigindo a assinatura para incluir SparkSession
     """
     Realiza o scraping de produtos do Magazine Luiza e retorna um Spark DataFrame.
     

@@ -24,7 +24,7 @@ PRODUCT_MATCHES_TABLE = f"{CATALOG_NAME}.product_matches"
 # Configurações de Processamento
 SIMILARITY_THRESHOLD = 0.7
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-BATCH_SIZE = 1000
+BATCH_SIZE = 256
 
 # Configurações de Email
 EMAIL_CONFIG = {
@@ -63,7 +63,15 @@ SCRAPING_CONFIG = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         },
         "timeout": 30,
-        "max_retries": 3
+        "max_retries": 3,
+        "categories": [
+            "Eletroportateis",
+            "Informatica",
+            "Tv e Video",
+            "Moveis",
+            "Eletrodomesticos",
+            "Celulares"
+        ]
     }
 }
 
