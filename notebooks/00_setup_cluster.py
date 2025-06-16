@@ -92,7 +92,11 @@ for lib in required_libraries:
 
 # COMMAND ----------
 
+import os
 import logging
+
+# Garante que o diretório existe
+os.makedirs("/dbfs/FileStore/logs", exist_ok=True)
 
 # Configurar logging
 logging.basicConfig(
