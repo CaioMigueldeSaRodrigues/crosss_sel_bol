@@ -16,7 +16,7 @@
 # COMMAND ----------
 
 # Instalar bibliotecas necessárias
-!pip install sentence-transformers==2.2.2 pandas==2.1.4 openpyxl==3.1.2 beautifulsoup4==4.12.2 requests==2.31.0 sendgrid==6.10.0 delta-spark==3.0.0 pyspark==3.4.1 scikit-learn databricks-sql-connector sqlalchemy pyhive mlflow rich
+!pip install sentence-transformers==2.2.2 pandas==2.1.4 openpyxl==3.1.2 beautifulsoup4==4.12.2 requests==2.31.0 sendgrid==6.10.0 delta-spark==3.0.0 pyspark==3.5.0 scikit-learn databricks-sql-connector sqlalchemy pyhive mlflow rich
 
 # COMMAND ----------
 
