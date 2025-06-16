@@ -5,10 +5,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import logging
 import pandas as pd
-from ..config import SIMILARITY_THRESHOLD
+from ..config import SIMILARITY_THRESHOLD, EMBEDDING_MODEL
 
 # Inicializa o modelo de embeddings
-model = SentenceTransformer('distiluse-base-multilingual-cased-v1')
+model = SentenceTransformer(EMBEDDING_MODEL)
 
 @udf(returnType=ArrayType(FloatType()))
 def generate_embedding(text):

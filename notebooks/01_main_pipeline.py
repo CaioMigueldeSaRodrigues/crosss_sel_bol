@@ -8,15 +8,28 @@ sys.path.append(os.path.abspath('../src'))
 
 # COMMAND ----------
 
+# Configurar Spark Session
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("Scraping Benchmarking") \
+    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+    .config("spark.databricks.delta.optimizeWrite.enabled", "true") \
+    .config("spark.databricks.delta.autoCompact.enabled", "true") \
+    .getOrCreate()
+
+# COMMAND ----------
+
 # Importar módulos
 from config import *
 from scraping.magalu import scrape_magalu
 from scraping.bemol import scrape_bemol
 from processing.cleaning import clean_dataframe_prices
-from src.processing.embeddings import generate_dataframe_embeddings
+from processing.embeddings import generate_dataframe_embeddings
 from analysis.similarity import match_products
 from export.export_excel import export_to_excel
-from src.email.send_email import send_email
+from email.send_email import send_email
 
 # COMMAND ----------
 
@@ -31,6 +44,7 @@ def save_to_delta(df, table_name, mode="overwrite"):
     df.write.format("delta") \
         .mode(mode) \
         .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .saveAsTable(full_table_name)
     return full_table_name
 
@@ -39,7 +53,7 @@ def save_to_delta(df, table_name, mode="overwrite"):
 try:
     # 2. Scraping Magalu
     print("Iniciando scraping Magazine Luiza")
-    df_magalu = scrape_magalu(SCRAPING_CONFIG['magalu']['categories'], paginas=2, spark=spark)
+    df_magalu = scrape_magalu(SCRAPING_CONFIG['magalu']['categories'], paginas=17, spark=spark)
     df_magalu = df_magalu.withColumn("source", lit("magalu")) \
                         .withColumn("extraction_date", current_timestamp())
     
@@ -59,8 +73,8 @@ try:
     
     # 4. Limpeza de preços
     print("Iniciando limpeza de preços")
-    df_magalu = clean_dataframe_prices(df_magalu, column_name="price")
-    df_bemol = clean_dataframe_prices(df_bemol, column_name="price")
+    df_magalu = clean_dataframe_prices(df_magalu)
+    df_bemol = clean_dataframe_prices(df_bemol)
     
     # Salva dados processados
     table_name = save_to_delta(df_magalu, "processed_magalu_products")

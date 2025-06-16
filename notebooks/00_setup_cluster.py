@@ -16,7 +16,7 @@
 # COMMAND ----------
 
 # Instalar bibliotecas necessárias
-!pip install sentence-transformers==2.2.2 pandas==2.1.4 openpyxl==3.1.2 beautifulsoup4==4.12.2 requests==2.31.0 sendgrid==6.10.0 delta-spark==3.0.0
+!pip install sentence-transformers==2.2.2 pandas==2.1.4 openpyxl==3.1.2 beautifulsoup4==4.12.2 requests==2.31.0 sendgrid==6.10.0 delta-spark==3.0.0 pyspark==3.4.1 scikit-learn databricks-sql-connector sqlalchemy pyhive mlflow rich
 
 # COMMAND ----------
 
@@ -72,7 +72,14 @@ required_libraries = [
     'bs4',
     'requests',
     'sendgrid',
-    'delta'
+    'delta',
+    'pyspark',
+    'sklearn',
+    'databricks',
+    'sqlalchemy',
+    'pyhive',
+    'mlflow',
+    'rich'
 ]
 
 for lib in required_libraries:
@@ -105,6 +112,40 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 logger.info("Setup do ambiente concluído com sucesso!")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 6. Verificar Configurações do Cluster
+# MAGIC Verificando se o cluster está configurado corretamente.
+
+# COMMAND ----------
+
+# COMMAND ----------
+
+# Verificar configurações do Spark
+spark_conf = spark.sparkContext.getConf().getAll()
+print("\nConfigurações do Spark:")
+for conf in spark_conf:
+    print(f"{conf[0]}: {conf[1]}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 7. Verificar Acesso ao DBFS
+# MAGIC Verificando se temos acesso aos diretórios do DBFS.
+
+# COMMAND ----------
+
+# COMMAND ----------
+
+# Verificar acesso ao DBFS
+try:
+    dbutils.fs.ls("/FileStore/tables")
+    print("✅ Acesso ao DBFS confirmado")
+except Exception as e:
+    print("❌ Erro ao acessar DBFS:")
+    print(str(e))
 
 # COMMAND ----------
 
