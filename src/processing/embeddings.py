@@ -3,6 +3,8 @@ from pyspark.sql.types import ArrayType, FloatType
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import logging
+import pandas as pd
+from ..config import EMBEDDING_MODEL, BATCH_SIZE
 
 def generate_embeddings_from_delta(spark, table_name="bol.feed_varejo_vtex", batch_size=32):
     """
@@ -78,3 +80,32 @@ def generate_embeddings(df, col="title", batch_size=32):
     except Exception as e:
         logging.error(f"Erro durante a geração de embeddings: {str(e)}")
         return df
+
+def generate_embeddings(texts, model_name=EMBEDDING_MODEL, batch_size=BATCH_SIZE):
+    """
+    Gera embeddings para uma lista de textos usando o modelo especificado.
+    
+    Args:
+        texts (list): Lista de textos para gerar embeddings
+        model_name (str): Nome do modelo a ser usado
+        batch_size (int): Tamanho do batch para processamento
+        
+    Returns:
+        list: Lista de embeddings gerados
+    """
+    try:
+        # Carrega o modelo
+        model = SentenceTransformer(model_name)
+        
+        # Gera embeddings em batches
+        embeddings = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            batch_embeddings = model.encode(batch, show_progress_bar=True)
+            embeddings.extend(batch_embeddings)
+            
+        return embeddings
+        
+    except Exception as e:
+        print(f"Erro ao gerar embeddings: {str(e)}")
+        raise

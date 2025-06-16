@@ -2,18 +2,15 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import logging
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType
-from pyspark.sql.functions import col, lit
+import pandas as pd
 
-def extrair_produtos(url, headers, spark, paginas=2):
+def extrair_produtos(url, headers, paginas=2):
     """
     Extrai produtos de uma página do Magazine Luiza
     
     Args:
         url (str): URL da página de produtos
         headers (dict): Headers para a requisição HTTP
-        spark (SparkSession): Sessão Spark
         paginas (int): Número de páginas para extrair
         
     Returns:
@@ -54,40 +51,30 @@ def extrair_produtos(url, headers, spark, paginas=2):
             
     return produtos
 
-def scrape_magalu(categorias, spark, paginas=2):
+def scrape_magalu(categorias=None, paginas=2):
     """
-    Realiza o scraping de produtos do Magazine Luiza
-    
-    Args:
-        categorias (list): Lista de categorias para scraping
-        spark (SparkSession): Sessão Spark
-        paginas (int): Número de páginas por categoria
-        
-    Returns:
-        DataFrame: DataFrame Spark com os produtos coletados
+    Realiza o scraping de produtos do Magazine Luiza usando pandas
     """
     base_url = "https://www.magazineluiza.com.br"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
-    
-    schema = StructType([
-        StructField("title", StringType(), True),
-        StructField("price", DoubleType(), True),
-        StructField("url", StringType(), True)
-    ])
-    
+    if categorias is None:
+        categorias = [
+            "eletroportateis/l/ep",
+            "informatica/l/in",
+            "tv-e-video/l/et",
+            "moveis/l/mo",
+            "eletrodomesticos/l/ed",
+            "celulares-e-smartphones/l/te"
+        ]
     all_products = []
-    
     for categoria in categorias:
         logging.info(f"Coletando produtos da categoria: {categoria}")
         url = f"{base_url}/{categoria}"
-        produtos = extrair_produtos(url, headers, spark, paginas)
+        produtos = extrair_produtos(url, headers, paginas)
         all_products.extend(produtos)
         logging.info(f"Coletados {len(produtos)} produtos da categoria {categoria}")
-        
-    # Criar DataFrame Spark
-    df = spark.createDataFrame(all_products, schema)
-    logging.info(f"Total de produtos coletados: {df.count()}")
-    
+    df = pd.DataFrame(all_products)
+    logging.info(f"Total de produtos coletados: {len(df)}")
     return df 

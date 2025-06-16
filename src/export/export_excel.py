@@ -1,24 +1,41 @@
 import pandas as pd
-import logging
-from pyspark.sql import SparkSession
+from datetime import datetime
+from ..config import DBFS_EXPORTS_PATH, EXPORT_CONFIG
 
-def export_to_excel(df, output_path):
+def export_to_excel(df, filename=None):
     """
-    Exporta DataFrame Spark para Excel
+    Exporta um DataFrame para um arquivo Excel.
     
     Args:
-        df (DataFrame): DataFrame Spark para exportar
-        output_path (str): Caminho do arquivo Excel de saída
+        df (pd.DataFrame): DataFrame a ser exportado
+        filename (str, optional): Nome do arquivo. Se None, gera um nome baseado na data/hora.
+        
+    Returns:
+        str: Caminho do arquivo exportado
     """
     try:
-        # Converte para pandas
-        pdf = df.toPandas()
+        # Gera nome do arquivo se não fornecido
+        if filename is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"product_matches_{timestamp}.xlsx"
+            
+        # Define caminho completo
+        filepath = f"{DBFS_EXPORTS_PATH}/{filename}"
+        
+        # Seleciona colunas conforme configuração
+        columns = EXPORT_CONFIG['excel']['columns']
+        df_export = df[columns]
         
         # Exporta para Excel
-        pdf.to_excel(output_path, index=False, engine='openpyxl')
+        df_export.to_excel(
+            filepath,
+            sheet_name=EXPORT_CONFIG['excel']['sheet_name'],
+            index=False
+        )
         
-        logging.info(f"Exportação para Excel concluída: {output_path}")
+        print(f"Arquivo exportado com sucesso: {filepath}")
+        return filepath
         
     except Exception as e:
-        logging.error(f"Erro durante exportação para Excel: {str(e)}")
+        print(f"Erro ao exportar para Excel: {str(e)}")
         raise 

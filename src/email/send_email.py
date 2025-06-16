@@ -1,48 +1,69 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-import logging
-from src.config import EMAIL_CONFIG
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, To, Content
+import pandas as pd
+from ..config import EMAIL_CONFIG
 
-def send_email_with_attachment(subject, html_content, attachment_path, recipients, bcc=None):
+def send_email(df_matches):
     """
-    Envia email com anexo usando configurações do Databricks
+    Envia um email com os resultados do matching de produtos.
     
     Args:
-        subject (str): Assunto do email
-        html_content (str): Conteúdo HTML do email
-        attachment_path (str): Caminho do arquivo anexo
-        recipients (list): Lista de destinatários
-        bcc (list): Lista de destinatários em cópia oculta
+        df_matches (pd.DataFrame): DataFrame com produtos correspondentes
+        
+    Returns:
+        bool: True se o email foi enviado com sucesso, False caso contrário
     """
     try:
-        # Configura mensagem
-        msg = MIMEMultipart()
-        msg['Subject'] = subject
-        msg['From'] = EMAIL_CONFIG['sender']
-        msg['To'] = ', '.join(recipients)
+        if not EMAIL_CONFIG['enabled']:
+            print("Envio de email desabilitado nas configurações")
+            return False
+            
+        # Cria cliente SendGrid
+        sg = SendGridAPIClient(EMAIL_CONFIG['api_key'])
         
-        if bcc:
-            msg['Bcc'] = ', '.join(bcc)
+        # Prepara conteúdo do email
+        html_content = f"""
+        <h2>Relatório de Produtos Correspondentes</h2>
+        <p>Total de produtos correspondentes: {len(df_matches)}</p>
         
-        # Adiciona conteúdo HTML
-        msg.attach(MIMEText(html_content, 'html'))
+        <table border="1" style="border-collapse: collapse; width: 100%;">
+            <tr>
+                <th>Produto Bemol</th>
+                <th>Preço Bemol</th>
+                <th>Produto Magazine Luiza</th>
+                <th>Preço Magazine Luiza</th>
+                <th>Score de Similaridade</th>
+            </tr>
+        """
         
-        # Adiciona anexo
-        with open(attachment_path, 'rb') as f:
-            attachment = MIMEApplication(f.read(), _subtype='xlsx')
-            attachment.add_header('Content-Disposition', 'attachment', filename=attachment_path.split('/')[-1])
-            msg.attach(attachment)
+        # Adiciona linhas da tabela
+        for _, row in df_matches.iterrows():
+            html_content += f"""
+            <tr>
+                <td>{row['bemol_title']}</td>
+                <td>R$ {row['bemol_price']:.2f}</td>
+                <td>{row['magalu_title']}</td>
+                <td>R$ {row['magalu_price']:.2f}</td>
+                <td>{row['similarity_score']:.2f}</td>
+            </tr>
+            """
+            
+        html_content += "</table>"
+        
+        # Cria mensagem
+        message = Mail(
+            from_email=Email(EMAIL_CONFIG['from_email']),
+            to_emails=[To(email) for email in EMAIL_CONFIG['to_emails']],
+            subject=EMAIL_CONFIG['subject'],
+            html_content=Content("text/html", html_content)
+        )
         
         # Envia email
-        with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
-            server.starttls()
-            server.login(EMAIL_CONFIG['sender'], EMAIL_CONFIG['password'])
-            server.send_message(msg)
+        response = sg.send(message)
         
-        logging.info("Email enviado com sucesso")
+        print(f"Email enviado com sucesso. Status code: {response.status_code}")
+        return True
         
     except Exception as e:
-        logging.error(f"Erro ao enviar email: {str(e)}")
-        raise 
+        print(f"Erro ao enviar email: {str(e)}")
+        return False 

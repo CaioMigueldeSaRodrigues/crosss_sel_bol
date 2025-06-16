@@ -7,7 +7,8 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 ```
 /Repos/seu_usuario/scraping_benchmarking/
 ├── notebooks/
-│   └── 01_main_pipeline.py
+│   ├── 00_setup_cluster.py    # Notebook de configuração do ambiente
+│   └── 01_main_pipeline.py    # Pipeline principal
 ├── src/
 │   ├── scraping/
 │   │   ├── magalu.py
@@ -25,15 +26,17 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 └── requirements.txt
 ```
 
-## Configuração do Ambiente Databricks
+## Iniciando o Projeto
 
-1. **Cluster Configuration**:
+### 1. Configuração do Cluster
+
+1. Crie um novo cluster no Databricks:
    - Runtime: 13.3 LTS (includes Apache Spark 3.4.1, Scala 2.12)
    - Node Type: Standard_DS3_v2 (recomendado)
    - Min Workers: 1
    - Max Workers: 2
 
-2. **Bibliotecas Necessárias**:
+2. Adicione as seguintes bibliotecas ao cluster:
    ```
    sentence-transformers==2.2.2
    pandas==2.1.4
@@ -41,12 +44,29 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
    beautifulsoup4==4.12.2
    requests==2.31.0
    sendgrid==6.10.0
+   delta-spark==3.0.0
    ```
 
-3. **Permissões Necessárias**:
-   - Acesso à tabela `bol.feed_varejo_vtex`
-   - Permissão para criar tabelas no catálogo `bol`
-   - Acesso ao DBFS para armazenamento de arquivos
+### 2. Configuração do Repositório
+
+1. Clone o repositório no Databricks:
+   - Vá para "Repos" no menu lateral
+   - Clique em "Add Repo"
+   - Cole a URL: `https://github.com/CaioMigueldeSaRodrigues/scraping_benchmarking.git`
+   - Dê um nome para o repositório (ex: "scraping_benchmarking")
+
+### 3. Execução do Pipeline
+
+1. Execute o notebook de setup:
+   - Abra `notebooks/00_setup_cluster.py`
+   - Conecte ao cluster configurado
+   - Execute todas as células
+   - Reinicie o cluster para aplicar as alterações
+
+2. Execute o pipeline principal:
+   - Abra `notebooks/01_main_pipeline.py`
+   - Conecte ao cluster configurado
+   - Execute todas as células
 
 ## Tabelas Delta
 
@@ -57,21 +77,6 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 - `bol.raw_magalu_products`: Produtos brutos do Magazine Luiza
 - `bol.processed_magalu_products`: Produtos processados do Magazine Luiza
 - `bol.product_matches`: Produtos correspondentes entre as lojas
-
-## Execução
-
-1. **Preparação**:
-   ```python
-   %fs mkdirs /FileStore/tables/raw
-   %fs mkdirs /FileStore/tables/processed
-   %fs mkdirs /FileStore/tables/exports
-   %fs mkdirs /FileStore/logs
-   ```
-
-2. **Execução do Pipeline**:
-   - Abra o notebook `notebooks/01_main_pipeline.py`
-   - Conecte ao cluster configurado
-   - Execute todas as células
 
 ## Configurações
 
@@ -86,17 +91,18 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 
 ## Troubleshooting
 
-1. **Erro de Permissão**:
+1. **Erro de Biblioteca**:
+   - Execute o notebook `00_setup_cluster.py`
+   - Verifique se todas as bibliotecas foram instaladas
+   - Reinicie o cluster
+
+2. **Erro de Permissão**:
    - Verificar acesso ao catálogo `bol`
    - Confirmar permissões no DBFS
 
-2. **Erro de Memória**:
+3. **Erro de Memória**:
    - Aumentar número de workers
    - Ajustar configurações de memória do cluster
-
-3. **Erro de Biblioteca**:
-   - Verificar versões das bibliotecas
-   - Reinstalar bibliotecas no cluster
 
 4. **Erro de Conexão**:
    - Verificar token do Databricks
