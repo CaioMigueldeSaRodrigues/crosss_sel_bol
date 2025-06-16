@@ -13,7 +13,7 @@ from config import *
 from scraping.magalu import scrape_magalu
 from scraping.bemol import scrape_bemol
 from processing.cleaning import clean_dataframe_prices
-from processing.embeddings import generate_dataframe_embeddings
+from src.processing.embeddings import generate_dataframe_embeddings
 from analysis.similarity import match_products
 from export.export_excel import export_to_excel
 from src.email.send_email import send_email
