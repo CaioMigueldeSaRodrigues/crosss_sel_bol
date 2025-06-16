@@ -1,5 +1,6 @@
 from pyspark.sql.functions import col, regexp_replace, when, lit
 import logging
+import re
 
 def limpar_preco(preco):
     try:
@@ -14,13 +15,13 @@ def limpar_preco(preco):
     except:
         return 0.0
 
-def clean_dataframe_prices(df, col="price"):
+def clean_dataframe_prices(df, column_name="price"):
     """
     Limpa e padroniza os preços no DataFrame
     
     Args:
         df (DataFrame): DataFrame Spark com os dados
-        col (str): Nome da coluna de preços
+        column_name (str): Nome da coluna de preços
         
     Returns:
         DataFrame: DataFrame com preços limpos
@@ -28,26 +29,26 @@ def clean_dataframe_prices(df, col="price"):
     try:
         # Remove caracteres não numéricos exceto ponto e vírgula
         df = df.withColumn(
-            col,
-            regexp_replace(col(col), r'[^\d.,]', '')
+            column_name,
+            regexp_replace(col(column_name), r'[^\\d.,]', '')
         )
         
         # Substitui vírgula por ponto para decimal
         df = df.withColumn(
-            col,
-            regexp_replace(col(col), ',', '.')
+            column_name,
+            regexp_replace(col(column_name), ',', '.')
         )
         
         # Converte para double
         df = df.withColumn(
-            col,
-            col(col).cast('double')
+            column_name,
+            col(column_name).cast('double')
         )
         
         # Remove valores nulos ou negativos
         df = df.withColumn(
-            col,
-            when(col(col).isNull() | (col(col) <= 0), None).otherwise(col(col))
+            column_name,
+            when(col(column_name).isNull() | (col(column_name) <= 0), None).otherwise(col(column_name))
         )
         
         logging.info("Limpeza de preços concluída com sucesso")

@@ -1,11 +1,12 @@
 from pyspark.sql.functions import col, udf, lit
-from pyspark.sql.types import DoubleType
+from pyspark.sql.types import DoubleType, ArrayType, FloatType
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
 import pandas as pd
 from ..config import SIMILARITY_THRESHOLD
 
+@udf(returnType=DoubleType())
 def calculate_similarity(embedding1, embedding2):
     """
     Calcula a similaridade de cosseno entre dois embeddings
@@ -32,48 +33,60 @@ def calculate_similarity(embedding1, embedding2):
         logging.error(f"Erro ao calcular similaridade: {str(e)}")
         return 0.0
 
-def match_products(bemol_embeddings, magalu_embeddings, bemol_products, magalu_products, threshold=SIMILARITY_THRESHOLD):
+def match_products(df_magalu, df_bemol, similarity_threshold=SIMILARITY_THRESHOLD):
     """
-    Encontra produtos correspondentes entre Bemol e Magazine Luiza usando similaridade de cosseno.
+    Encontra produtos correspondentes entre Magazine Luiza e Bemol usando similaridade de cosseno em DataFrames Spark.
     
     Args:
-        bemol_embeddings (list): Embeddings dos produtos da Bemol
-        magalu_embeddings (list): Embeddings dos produtos do Magazine Luiza
-        bemol_products (pd.DataFrame): DataFrame com produtos da Bemol
-        magalu_products (pd.DataFrame): DataFrame com produtos do Magazine Luiza
-        threshold (float): Limiar de similaridade para considerar produtos como correspondentes
+        df_magalu (DataFrame): DataFrame Spark com produtos do Magazine Luiza, incluindo 'magalu_embedding'.
+        df_bemol (DataFrame): DataFrame Spark com produtos da Bemol, incluindo 'bemol_embedding'.
+        similarity_threshold (float): Limiar de similaridade para considerar produtos como correspondentes.
         
     Returns:
-        pd.DataFrame: DataFrame com produtos correspondentes
+        DataFrame: DataFrame Spark com produtos correspondentes e seus scores de similaridade.
     """
     try:
-        # Calcula similaridade de cosseno
-        similarity_matrix = cosine_similarity(bemol_embeddings, magalu_embeddings)
-        
-        # Encontra pares de produtos com similaridade acima do threshold
-        matches = []
-        for i in range(len(bemol_products)):
-            for j in range(len(magalu_products)):
-                similarity = similarity_matrix[i][j]
-                if similarity >= threshold:
-                    matches.append({
-                        'bemol_id': bemol_products.iloc[i]['id'],
-                        'bemol_title': bemol_products.iloc[i]['title'],
-                        'bemol_price': bemol_products.iloc[i]['price'],
-                        'magalu_id': magalu_products.iloc[j]['id'],
-                        'magalu_title': magalu_products.iloc[j]['title'],
-                        'magalu_price': magalu_products.iloc[j]['price'],
-                        'similarity_score': similarity
-                    })
-        
-        # Cria DataFrame com matches
-        matches_df = pd.DataFrame(matches)
-        
-        # Ordena por score de similaridade
-        matches_df = matches_df.sort_values('similarity_score', ascending=False)
-        
-        return matches_df
-        
+        # Renomear colunas para evitar conflitos após o join
+        df_magalu_renamed = df_magalu.withColumnRenamed("title", "magalu_title") \
+                                      .withColumnRenamed("price", "magalu_price") \
+                                      .withColumnRenamed("url", "magalu_url") \
+                                      .withColumnRenamed("source", "magalu_source") \
+                                      .withColumnRenamed("extraction_date", "magalu_extraction_date")
+
+        df_bemol_renamed = df_bemol.withColumnRenamed("title", "bemol_title") \
+                                    .withColumnRenamed("price", "bemol_price") \
+                                    .withColumnRenamed("url", "bemol_url") \
+                                    .withColumnRenamed("source", "bemol_source") \
+                                    .withColumnRenamed("extraction_date", "bemol_extraction_date")
+
+        # Realizar um cross join para comparar todos os pares
+        joined_df = df_magalu_renamed.crossJoin(df_bemol_renamed)
+
+        # Calcular a similaridade usando a UDF
+        joined_df = joined_df.withColumn(
+            "similarity_score",
+            calculate_similarity(col("magalu_embedding"), col("bemol_embedding"))
+        )
+
+        # Filtrar por similaridade e selecionar as colunas desejadas
+        df_matches = joined_df.filter(col("similarity_score") >= similarity_threshold) \
+                                .select(
+                                    col("magalu_title"),
+                                    col("magalu_price"),
+                                    col("magalu_url"),
+                                    col("magalu_source"),
+                                    col("magalu_extraction_date"),
+                                    col("bemol_title"),
+                                    col("bemol_price"),
+                                    col("bemol_url"),
+                                    col("bemol_source"),
+                                    col("bemol_extraction_date"),
+                                    col("similarity_score")
+                                ).orderBy(col("similarity_score").desc())
+
+        logging.info(f"Matching de produtos concluído. {df_matches.count()} pares encontrados.")
+        return df_matches
+
     except Exception as e:
-        print(f"Erro ao fazer matching de produtos: {str(e)}")
-        raise 
+        logging.error(f"Erro durante o matching de produtos: {str(e)}")
+        return None 

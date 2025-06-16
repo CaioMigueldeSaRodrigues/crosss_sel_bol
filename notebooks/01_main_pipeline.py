@@ -13,7 +13,7 @@ from config import *
 from scraping.magalu import scrape_magalu
 from scraping.bemol import scrape_bemol
 from processing.cleaning import clean_dataframe_prices
-from processing.embeddings import generate_embeddings
+from processing.embeddings import generate_dataframe_embeddings
 from analysis.similarity import match_products
 from export.export_excel import export_to_excel
 from src.email.send_email import send_email
@@ -59,8 +59,8 @@ try:
     
     # 4. Limpeza de preços
     print("Iniciando limpeza de preços")
-    df_magalu = clean_dataframe_prices(df_magalu, col="price")
-    df_bemol = clean_dataframe_prices(df_bemol, col="price")
+    df_magalu = clean_dataframe_prices(df_magalu, column_name="price")
+    df_bemol = clean_dataframe_prices(df_bemol, column_name="price")
     
     # Salva dados processados
     table_name = save_to_delta(df_magalu, "processed_magalu_products")
@@ -71,8 +71,11 @@ try:
     
     # 5. Geração de embeddings
     print("Iniciando geração de embeddings")
-    df_magalu = generate_embeddings(df_magalu, col="title", batch_size=PROCESSING_CONFIG['batch_size'])
-    df_bemol = generate_embeddings(df_bemol, col="title", batch_size=PROCESSING_CONFIG['batch_size'])
+    df_magalu = generate_dataframe_embeddings(df_magalu, column_name="title", batch_size=PROCESSING_CONFIG['batch_size'])
+    df_magalu = df_magalu.withColumnRenamed("embedding", "magalu_embedding")
+    
+    df_bemol = generate_dataframe_embeddings(df_bemol, column_name="title", batch_size=PROCESSING_CONFIG['batch_size'])
+    df_bemol = df_bemol.withColumnRenamed("embedding", "bemol_embedding")
     
     # 6. Análise de similaridade e pareamento
     print("Iniciando matching de produtos")

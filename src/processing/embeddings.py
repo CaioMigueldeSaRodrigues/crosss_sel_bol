@@ -47,13 +47,13 @@ def generate_embeddings_from_delta(spark, table_name="bol.feed_varejo_vtex", bat
         logging.error(f"Erro durante a geração de embeddings: {str(e)}")
         return None
 
-def generate_embeddings(df, col="title", batch_size=32):
+def generate_dataframe_embeddings(df, column_name="title", batch_size=32):
     """
     Gera embeddings para os títulos dos produtos usando Sentence Transformers
     
     Args:
         df (DataFrame): DataFrame Spark com os dados
-        col (str): Nome da coluna de texto para gerar embeddings
+        column_name (str): Nome da coluna de texto para gerar embeddings
         batch_size (int): Tamanho do batch para processamento
         
     Returns:
@@ -72,7 +72,7 @@ def generate_embeddings(df, col="title", batch_size=32):
             return embedding.tolist()
         
         # Gera embeddings
-        df = df.withColumn("embedding", generate_embedding(col(col)))
+        df = df.withColumn("embedding", generate_embedding(col(column_name)))
         
         logging.info("Geração de embeddings concluída com sucesso")
         return df
@@ -81,7 +81,7 @@ def generate_embeddings(df, col="title", batch_size=32):
         logging.error(f"Erro durante a geração de embeddings: {str(e)}")
         return df
 
-def generate_embeddings(texts, model_name=EMBEDDING_MODEL, batch_size=BATCH_SIZE):
+def generate_text_embeddings(texts, model_name=EMBEDDING_MODEL, batch_size=BATCH_SIZE):
     """
     Gera embeddings para uma lista de textos usando o modelo especificado.
     
