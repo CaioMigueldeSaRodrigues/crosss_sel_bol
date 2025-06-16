@@ -16,20 +16,20 @@
 # COMMAND ----------
 
 # Instalar bibliotecas necessárias
-# Usando versões compatíveis com o runtime 16.2.x
-!pip install sentence-transformers==2.2.2
-!pip install pandas==2.1.4
-!pip install openpyxl==3.1.2
-!pip install beautifulsoup4==4.12.2
-!pip install requests==2.31.0
-!pip install sendgrid==6.10.0
-!pip install delta-spark==3.0.0
-!pip install scikit-learn==1.3.2
-!pip install databricks-sql-connector==2.9.3
-!pip install sqlalchemy==2.0.23
-!pip install pyhive==0.7.0
-!pip install mlflow==2.8.1
-!pip install rich==13.7.0
+# Usando versões compatíveis com o runtime do Spark 3.5.2
+%pip install sentence-transformers==2.2.2
+%pip install pandas==2.1.4
+%pip install openpyxl==3.1.2
+%pip install beautifulsoup4==4.12.2
+%pip install requests==2.31.0
+%pip install sendgrid==6.10.0
+%pip install delta-spark==3.0.0
+%pip install scikit-learn==1.3.2
+%pip install databricks-sql-connector==2.9.3
+%pip install sqlalchemy==2.0.23
+%pip install pyhive==0.7.0
+%pip install mlflow==2.8.1
+%pip install rich==13.7.0
 
 # COMMAND ----------
 
@@ -138,7 +138,6 @@ logger.info("Setup do ambiente concluído com sucesso!")
 # Verificar configurações do Spark
 print("Configurações do Spark:")
 print(f"Spark Version: {spark.version}")
-print(f"Driver Memory: {spark.conf.get('spark.driver.memory')}")
 print(f"Max Result Size: {spark.conf.get('spark.driver.maxResultSize')}")
 print(f"Delta Preview: {spark.conf.get('spark.databricks.delta.preview.enabled')}")
 
