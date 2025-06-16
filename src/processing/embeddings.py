@@ -3,7 +3,7 @@ from pyspark.sql.types import ArrayType, FloatType, StructType, StructField, Str
 from sentence_transformers import SentenceTransformer
 import logging
 import pandas as pd
-from config import EMBEDDING_MODEL, BATCH_SIZE
+from config import PROCESSING_CONFIG
 
 def generate_dataframe_embeddings(df, column_name="title"):
     """
@@ -19,7 +19,7 @@ def generate_dataframe_embeddings(df, column_name="title"):
     """
     try:
         # Carrega o modelo de embeddings
-        model = SentenceTransformer(EMBEDDING_MODEL)
+        model = SentenceTransformer(PROCESSING_CONFIG["embedding_model"])
 
         # Converte o DataFrame Spark para Pandas DataFrame
         df_pandas = df.toPandas()
@@ -49,7 +49,7 @@ def generate_dataframe_embeddings(df, column_name="title"):
             empty_schema = StructType(empty_schema.fields + [StructField("embedding", ArrayType(FloatType()), True)])
         return df.sparkSession.createDataFrame([], schema=empty_schema)
 
-def generate_text_embeddings(texts, model_name=EMBEDDING_MODEL, batch_size=BATCH_SIZE):
+def generate_text_embeddings(texts, model_name=PROCESSING_CONFIG["embedding_model"], batch_size=PROCESSING_CONFIG["batch_size"]):
     """
     Gera embeddings para uma lista de textos usando o modelo especificado.
     
