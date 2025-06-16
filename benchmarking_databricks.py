@@ -64,30 +64,28 @@ class TextProcessor:
 class PriceProcessor:
     @staticmethod
     def clean_price(price: Union[str, float, int]) -> float:
-        """Clean and standardize price values."""
+        """Clean and standardize price values.
+        
+        Handles multiple price formats:
+        - Brazilian format: 5.886,00
+        - Mixed formats: R$ 5.886,00 ou 5.886,00
+        - Simple formats: 5886,00
+        """
         try:
             if pd.isna(price):
                 return 0.0
                 
-            price_str = str(price)
-            
-            # Remove currency symbols and text
-            price_str = re.sub(r'[^\d.,]', '', price_str)
-            
-            # Handle different price formats
-            if ',' in price_str and '.' in price_str:
-                # Format: 1.234,56 or 1,234.56
-                if price_str.rindex(',') > price_str.rindex('.'):
-                    # Format: 1.234,56
-                    price_str = price_str.replace('.', '').replace(',', '.')
-                else:
-                    # Format: 1,234.56
-                    price_str = price_str.replace(',', '')
-            else:
-                # Format: 1234,56 or 1234.56
-                price_str = price_str.replace(',', '.')
-            
-            return float(price_str)
+            preco_str = str(price)
+            # Primeira tentativa: Regex específico para formato brasileiro
+            match = re.search(r'(\d{1,3}(?:\.\d{3})*,\d{2})', preco_str)
+            if match:
+                preco_str = match.group(1).replace('.', '').replace(',', '.')
+                return float(preco_str)
+
+            # Segunda tentativa: Limpeza básica
+            preco_str = preco_str.replace('R$', '').replace('ou', '').strip()
+            preco_str = preco_str.replace('.', '').replace(',', '.')
+            return float(preco_str)
         except Exception as e:
             logger.warning(f"Error cleaning price {price}: {e}")
             return 0.0
@@ -113,8 +111,6 @@ class SimilarityProcessor:
             return "exclusivo"
         elif score >= 0.85:
             return "muito similar"
-        elif score >= 0.75:
-            return "similar"
         elif score >= 0.5:
             return "moderadamente similar"
         else:
@@ -123,63 +119,48 @@ class SimilarityProcessor:
 # COMMAND ----------
 
 class BenchmarkingProcessor:
-    def __init__(self, similarity_threshold: float = 0.75):
-        self.similarity_processor = SimilarityProcessor(similarity_threshold)
-        self.price_processor = PriceProcessor()
-        self.text_processor = TextProcessor()
+    def __init__(self, text_processor: TextProcessor, similarity_processor: SimilarityProcessor, price_processor: PriceProcessor):
+        self.text_processor = text_processor
+        self.similarity_processor = similarity_processor
+        self.price_processor = price_processor
 
-    def process_dataframes(self, df_magalu: pd.DataFrame, df_bemol: pd.DataFrame) -> pd.DataFrame:
-        """Process and match products between marketplaces."""
-        try:
-            # Prepare dataframes
-            df_magalu["marketplace"] = "Magalu"
-            df_bemol["marketplace"] = "Bemol"
+    def process_data(self, df_magalu: pd.DataFrame, df_bemol: pd.DataFrame) -> pd.DataFrame:
+        """Process data from both marketplaces."""
+        # Prepare dataframes
+        df_magalu["marketplace"] = "Magalu"
+        df_bemol["marketplace"] = "Bemol"
 
-            # Clean prices
-            df_magalu["price"] = df_magalu["price"].apply(self.price_processor.clean_price)
-            df_bemol["price"] = df_bemol["price"].apply(self.price_processor.clean_price)
+        # Clean prices
+        df_magalu["price"] = df_magalu["price"].apply(self.price_processor.clean_price)
+        df_bemol["price"] = df_bemol["price"].apply(self.price_processor.clean_price)
 
-            # Process embeddings
-            df_magalu["embedding"] = df_magalu["embedding"].apply(lambda x: np.array(x) if pd.notnull(x) else None)
-            df_bemol["embedding"] = df_bemol["embedding"].apply(lambda x: np.array(x) if pd.notnull(x) else None)
+        # Convert embeddings
+        df_magalu["embedding"] = df_magalu["embedding"].apply(np.array)
+        df_bemol["embedding"] = df_bemol["embedding"].apply(np.array)
 
-            # Remove null embeddings
-            df_magalu = df_magalu[df_magalu["embedding"].notnull()]
-            df_bemol = df_bemol[df_bemol["embedding"].notnull()]
+        # Remove null embeddings
+        df_magalu = df_magalu[df_magalu["embedding"].notnull()]
+        df_bemol = df_bemol[df_bemol["embedding"].notnull()]
 
-            # Process titles
-            df_magalu["processed_title"] = df_magalu["title"].apply(self.text_processor.preprocess_text)
-            df_bemol["processed_title"] = df_bemol["title"].apply(self.text_processor.preprocess_text)
+        # Calculate similarity matrix
+        sim_matrix = cosine_similarity(df_magalu["embedding"].tolist(), df_bemol["embedding"].tolist())
+        matched_indices = sim_matrix.argmax(axis=1)
+        matched_scores = sim_matrix.max(axis=1)
 
-            return self._match_products(df_magalu, df_bemol)
-
-        except Exception as e:
-            logger.error(f"Error processing dataframes: {e}")
-            raise
-
-    def _match_products(self, df_magalu: pd.DataFrame, df_bemol: pd.DataFrame) -> pd.DataFrame:
-        """Match products between marketplaces using embeddings."""
+        # Match products
         result = []
-        pares_usados_bemol = set()
-
-        for idx, magalu_row in df_magalu.iterrows():
-            magalu_embed = magalu_row["embedding"]
-            scores = cosine_similarity([magalu_embed], df_bemol["embedding"].tolist())[0]
-            best_idx = np.argmax(scores)
-            best_score = scores[best_idx]
-
-            if best_score >= self.similarity_processor.threshold and best_idx not in pares_usados_bemol:
-                bemol_row = df_bemol.iloc[best_idx]
-                pares_usados_bemol.add(best_idx)
-
+        for idx, (magalu_row, match_idx, score) in enumerate(zip(df_magalu.itertuples(), matched_indices, matched_scores)):
+            if score >= self.similarity_processor.threshold:
+                bemol_row = df_bemol.iloc[match_idx]
+                
                 # Process URLs
                 magalu_url = self._process_url(magalu_row.url, "magazineluiza.com.br")
                 bemol_url = self._process_url(bemol_row.url, "bemol.com.br")
 
                 # Add matched pairs
                 result.extend([
-                    self._create_product_dict(magalu_row, magalu_url, best_score),
-                    self._create_product_dict(bemol_row, bemol_url, best_score)
+                    self._create_product_dict(magalu_row, magalu_url, score),
+                    self._create_product_dict(bemol_row, bemol_url, score)
                 ])
 
         # Add exclusive products
@@ -192,7 +173,7 @@ class BenchmarkingProcessor:
         return df_final
 
     def _process_url(self, url: str, domain: str) -> str:
-        """Process and standardize URLs."""
+        """Process URL to ensure correct format."""
         if not str(url).startswith("http"):
             return f"https://www.{domain}{url}"
         return url
@@ -208,14 +189,11 @@ class BenchmarkingProcessor:
             "similaridade": similarity
         }
 
-    def _add_exclusive_products(self, df_magalu: pd.DataFrame, df_bemol: pd.DataFrame, 
-                              result: List[Dict]) -> List[Dict]:
+    def _add_exclusive_products(self, df_magalu: pd.DataFrame, df_bemol: pd.DataFrame, result: List[Dict]) -> List[Dict]:
         """Add exclusive products from both marketplaces."""
         exclusive_products = []
-        
-        # Get matched titles
         matched_titles = {r["title"] for r in result}
-        
+
         # Add exclusive Magalu products
         for row in df_magalu[~df_magalu["title"].isin(matched_titles)].itertuples():
             url = self._process_url(row.url, "magazineluiza.com.br")
@@ -259,26 +237,39 @@ class BenchmarkingProcessor:
         except:
             return None
 
-# COMMAND ----------
+def main():
+    try:
+        # Initialize processors
+        text_processor = TextProcessor()
+        similarity_processor = SimilarityProcessor()
+        price_processor = PriceProcessor()
+        benchmarking_processor = BenchmarkingProcessor(
+            text_processor, 
+            similarity_processor, 
+            price_processor
+        )
 
-# Initialize processor
-processor = BenchmarkingProcessor(similarity_threshold=0.75)
+        # Read data from Spark tables
+        df_magalu = spark.table("silver.embeddings_magalu_completo").toPandas()
+        df_bemol = spark.table("silver.embeddings_bemol").toPandas()
 
-# Read data from Databricks tables
-df_magalu = spark.table("silver.embeddings_magalu_completo").toPandas()
-df_bemol = spark.table("silver.embeddings_bemol").toPandas()
+        # Process data
+        df_final = benchmarking_processor.process_data(df_magalu, df_bemol)
 
-# Process data
-df_final = processor.process_dataframes(df_magalu, df_bemol)
+        # Save results as TempView for SQL queries
+        spark.createDataFrame(df_final).createOrReplaceTempView("tempview_benchmarking_pares")
 
-# Save results to Databricks
-spark.createDataFrame(df_final).createOrReplaceTempView("tempview_benchmarking_pares")
+        # Save final results to DBFS
+        output_path = "/dbfs/mnt/datalake/silver/benchmarking/benchmarking_results.parquet"
+        df_final.to_parquet(output_path, index=False)
+        logger.info(f"Results saved to {output_path}")
 
-# Export to Excel in Databricks File System
-excel_path = "/dbfs/FileStore/tempview_benchmarking_produtos.xlsx"
-df_final.to_excel(excel_path, index=False)
+    except Exception as e:
+        logger.error(f"Error in main: {e}")
+        raise
 
-logger.info(f"✅ Exportação final concluída com sucesso: {excel_path}")
+if __name__ == "__main__":
+    main()
 
 # COMMAND ----------
 

@@ -52,30 +52,37 @@ class TextProcessor:
 class PriceProcessor:
     @staticmethod
     def clean_price(price: Union[str, float, int]) -> float:
-        """Clean and standardize price values."""
+        """Clean and standardize price values.
+        
+        Handles multiple price formats:
+        - Brazilian format: 5.886,00
+        - Mixed formats: R$ 5.886,00 ou 5.886,00
+        - Simple formats: 5886,00
+        """
         try:
             if pd.isna(price):
                 return 0.0
                 
-            price_str = str(price)
-            
-            # Remove currency symbols and text
-            price_str = re.sub(r'[^\d.,]', '', price_str)
-            
-            # Handle different price formats
-            if ',' in price_str and '.' in price_str:
-                # Format: 1.234,56 or 1,234.56
-                if price_str.rindex(',') > price_str.rindex('.'):
-                    # Format: 1.234,56
-                    price_str = price_str.replace('.', '').replace(',', '.')
-                else:
-                    # Format: 1,234.56
-                    price_str = price_str.replace(',', '')
-            else:
-                # Format: 1234,56 or 1234.56
-                price_str = price_str.replace(',', '.')
-            
-            return float(price_str)
+            preco_str = str(price)
+            # Remove caracteres especiais invisíveis e palavras como "ou", "R$", etc
+            preco_str = preco_str.replace('\xa0', ' ').replace('R$', '').replace('ou', '')
+            preco_str = preco_str.strip()
+
+            # Primeira tentativa: Regex específico para formato brasileiro (mais preciso)
+            match = re.search(r'\d{1,3}(?:\.\d{3})*,\d{2}', preco_str)
+            if match:
+                preco_str = match.group(0).replace('.', '').replace(',', '.')
+                return float(preco_str)
+
+            # Segunda tentativa: Regex mais genérico para outros formatos
+            match = re.search(r'(\d{1,3}(?:\.\d{3})*,\d{2})', preco_str)
+            if match:
+                preco_str = match.group(1).replace('.', '').replace(',', '.')
+                return float(preco_str)
+
+            # Fallback: substituição bruta (menos confiável)
+            preco_str = preco_str.replace('.', '').replace(',', '.')
+            return float(preco_str)
         except Exception as e:
             logger.warning(f"Error cleaning price {price}: {e}")
             return 0.0
@@ -97,14 +104,12 @@ class SimilarityProcessor:
         """Classify similarity score into categories."""
         if score == -1:
             return "exclusivo"
+        elif score >= 0.95:
+            return "alta"
         elif score >= 0.85:
-            return "muito similar"
-        elif score >= 0.75:
-            return "similar"
-        elif score >= 0.5:
-            return "moderadamente similar"
+            return "moderada"
         else:
-            return "pouco similar"
+            return "baixa"
 
 class BenchmarkingProcessor:
     def __init__(self, similarity_threshold: float = 0.75):
@@ -160,10 +165,13 @@ class BenchmarkingProcessor:
                 magalu_url = self._process_url(magalu_row.url, "magazineluiza.com.br")
                 bemol_url = self._process_url(bemol_row.url, "bemol.com.br")
 
-                # Add matched pairs
+                # Classify similarity level
+                nivel = self.similarity_processor.classify_similarity(best_score)
+
+                # Add matched pairs with similarity level
                 result.extend([
-                    self._create_product_dict(magalu_row, magalu_url, best_score),
-                    self._create_product_dict(bemol_row, bemol_url, best_score)
+                    self._create_product_dict(magalu_row, magalu_url, best_score, nivel),
+                    self._create_product_dict(bemol_row, bemol_url, best_score, nivel)
                 ])
 
         # Add exclusive products
@@ -181,7 +189,7 @@ class BenchmarkingProcessor:
             return f"https://www.{domain}{url}"
         return url
 
-    def _create_product_dict(self, row: pd.Series, url: str, similarity: float) -> Dict:
+    def _create_product_dict(self, row: pd.Series, url: str, similarity: float, nivel: str) -> Dict:
         """Create product dictionary with standardized format."""
         return {
             "title": row.title,
@@ -189,7 +197,8 @@ class BenchmarkingProcessor:
             "price": row.price,
             "url": url,
             "exclusividade": "não",
-            "similaridade": similarity
+            "similaridade": similarity,
+            "nivel_similaridade": nivel
         }
 
     def _add_exclusive_products(self, df_magalu: pd.DataFrame, df_bemol: pd.DataFrame, 
@@ -203,45 +212,45 @@ class BenchmarkingProcessor:
         # Add exclusive Magalu products
         for row in df_magalu[~df_magalu["title"].isin(matched_titles)].itertuples():
             url = self._process_url(row.url, "magazineluiza.com.br")
-            exclusive_products.append(self._create_product_dict(row, url, -1))
+            exclusive_products.append(self._create_product_dict(row, url, -1, "baixa"))
         
         # Add exclusive Bemol products
         for row in df_bemol[~df_bemol["title"].isin(matched_titles)].itertuples():
             url = self._process_url(row.url, "bemol.com.br")
-            exclusive_products.append(self._create_product_dict(row, url, -1))
+            exclusive_products.append(self._create_product_dict(row, url, -1, "baixa"))
         
         return exclusive_products
 
     def _post_process_results(self, df_final: pd.DataFrame) -> pd.DataFrame:
         """Post-process the final results."""
+        # Redefine o índice e garante paridade
+        df_final = df_final.reset_index(drop=True)
+        if len(df_final) % 2 != 0:
+            df_final = df_final.iloc[:-1]
+
         # Sort results
         df_final = df_final.sort_values(
             by=["exclusividade", "similaridade"], 
             ascending=[True, False]
         ).reset_index(drop=True)
 
-        # Add similarity classification
-        df_final["nivel_similaridade"] = df_final["similaridade"].apply(
-            self.similarity_processor.classify_similarity
-        )
+        # Calculate price differences only for high similarity pairs
+        df_final["diferenca_percentual"] = None
+        for i in range(0, len(df_final), 2):
+            sim = df_final.loc[i, "similaridade"]
+            if sim >= 0.90:  # Aplica cálculo apenas para pares com alta similaridade
+                p1 = float(df_final.loc[i, "price"])
+                p2 = float(df_final.loc[i+1, "price"])
+                media = (p1 + p2) / 2
+                dif_percentual = abs(p1 - p2) / media * 100
+                df_final.loc[i:i+1, "diferenca_percentual"] = dif_percentual
 
-        # Calculate price differences
-        df_final["diferenca_percentual"] = df_final.groupby(
-            df_final.index // 2
-        )["price"].transform(
-            lambda x: self._calculate_price_difference(x.iloc[0], x.iloc[1]) 
-            if len(x) == 2 else None
+        # Format percentage values
+        df_final["diferenca_percentual"] = df_final["diferenca_percentual"].apply(
+            lambda x: f"{x:.2f}%" if pd.notnull(x) else None
         )
 
         return df_final
-
-    @staticmethod
-    def _calculate_price_difference(p1: float, p2: float) -> float:
-        """Calculate percentage difference between prices."""
-        try:
-            return abs(p1 - p2) / ((p1 + p2) / 2) * 100
-        except:
-            return None
 
 def main():
     try:

@@ -1,99 +1,132 @@
-# Scraping Benchmarking - Databricks
+# Scraping Benchmarking
 
-Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os produtos da Bemol, utilizando Databricks para processamento e armazenamento.
+Projeto para benchmarking de preços entre marketplaces usando processamento de texto e similaridade de embeddings.
 
-## Estrutura do Projeto
+## 🚀 Funcionalidades
+
+- Processamento de texto com NLTK
+- Geração de embeddings com Sentence Transformers
+- Cálculo de similaridade usando cosine similarity
+- Limpeza e padronização de preços
+- Classificação de similaridade em níveis
+- Cálculo de diferença percentual entre preços
+- Integração com Databricks
+
+## 📦 Estrutura do Projeto
 
 ```
-/Repos/seu_usuario/scraping_benchmarking/
+scraping_benchmarking/
 ├── notebooks/
-│   ├── 00_setup_cluster.py    # Notebook de configuração do ambiente
-│   └── 01_main_pipeline.py    # Pipeline principal
+│   └── 00_setup_cluster.py
 ├── src/
-│   ├── scraping/
-│   │   ├── magalu.py
-│   │   └── bemol.py
-│   ├── processing/
-│   │   ├── cleaning.py
-│   │   └── embeddings.py      # Lógica de geração de embeddings
-│   ├── analysis/
-│   │   └── similarity.py      # Lógica de similaridade e pareamento
-│   ├── export/
-│   │   └── export_excel.py
-│   ├── email/
-│   │   └── send_email.py
-│   └── config.py              # Configurações globais
+│   └── scraping/
+│       └── magalu.py
+├── benchmarking_improved.py
+├── benchmarking_databricks.py
 └── requirements.txt
 ```
 
-## Iniciando o Projeto
+## 🔧 Configuração
 
-### 1. Configuração do Cluster
+1. Instale as dependências:
+```bash
+pip install -r requirements.txt
+```
 
-Para melhor desempenho e compatibilidade, utilize as seguintes configurações no seu cluster Databricks (Cluster ID: `0521-212707-5nlw5qu4`, Nome: `DATA-ONLINE-01`):
-   - **Runtime**: `16.2.x-scala2.12` (ou versão compatível com Apache Spark 3.5.0 e Delta Lake 3.0.0)
-   - **Tipo de Nó (Driver)**: `Standard_D16_v3`
-   - **Tipo de Nó (Workers)**: `Standard_DS3_v2`
-   - **Auto-escalonamento**: Mínimo de 1 worker, Máximo de 4 workers.
-   - **Modo de Acesso**: `User Isolation` (ou Compartilhado)
-   - **Bibliotecas**: As bibliotecas Python necessárias serão instaladas automaticamente pelo notebook `00_setup_cluster.py` usando `%pip install --upgrade --force-reinstall`. Certifique-se de que o cluster tenha acesso à internet para download das dependências.
+2. Para ambiente Databricks:
+- Execute o notebook `00_setup_cluster.py` para configurar o cluster
+- O notebook instala apenas as bibliotecas necessárias que não estão presentes no cluster
 
-### 2. Configuração do Repositório
+## 💻 Uso
 
-1. Clone o repositório no Databricks:
-   - Vá para "Repos" no menu lateral
-   - Clique em "Add Repo"
-   - Cole a URL: `https://github.com/CaioMigueldeSaRodrigues/scraping_benchmarking.git`
-   - Dê um nome para o repositório (ex: "scraping_benchmarking")
+### Versão Local
+```python
+from benchmarking_improved import BenchmarkingProcessor, TextProcessor, SimilarityProcessor, PriceProcessor
 
-### 3. Execução do Pipeline
+# Inicialize os processadores
+text_processor = TextProcessor()
+similarity_processor = SimilarityProcessor()
+price_processor = PriceProcessor()
+benchmarking_processor = BenchmarkingProcessor(
+    text_processor, 
+    similarity_processor, 
+    price_processor
+)
 
-1. **Execute o notebook de setup:**
-   - Abra `notebooks/00_setup_cluster.py`
-   - Conecte ao cluster configurado
-   - **Execute TODAS as células.** Este notebook garante que o ambiente Python esteja configurado corretamente (incluindo o `sys.path` e todas as bibliotecas).
-   
-2. **Execute o pipeline principal:**
-   - Abra `notebooks/01_main_pipeline.py`
-   - Conecte ao cluster configurado
-   - **Execute TODAS as células.** A `SparkSession` será automaticamente injetada pelo Databricks, e o pipeline usará as funções otimizadas.
+# Processe os dados
+df_final = benchmarking_processor.process_data(df_magalu, df_bemol)
+```
 
-## Tabelas Delta
+### Versão Databricks
+```python
+# Execute o notebook benchmarking_databricks.py
+# Os resultados serão salvos como:
+# 1. TempView: tempview_benchmarking_pares
+# 2. Arquivo Parquet: /dbfs/mnt/datalake/silver/benchmarking/benchmarking_results.parquet
+```
 
-### Tabelas de Origem
-- `bol.feed_varejo_vtex`: Produtos da Bemol (verifique se esta tabela existe no seu Unity Catalog/Hive Metastore)
+## 📊 Classificação de Similaridade
 
-### Tabelas Geradas
-- `bol.raw_magalu_products`: Produtos brutos do Magazine Luiza
-- `bol.processed_magalu_products`: Produtos processados do Magazine Luiza
-- `bol.product_matches`: Produtos correspondentes entre as lojas
+- **Exclusivo**: score = -1
+- **Muito Similar**: score >= 0.85
+- **Moderadamente Similar**: score >= 0.5
+- **Pouco Similar**: score < 0.5
 
-## Configurações
+## 💰 Processamento de Preços
 
-### Email
-- API Key do SendGrid configurada em `src/config.py` (Variável de ambiente `SENDGRID_API_KEY` é recomendada)
-- Destinatários configurados em `EMAIL_CONFIG`
+- Suporte para múltiplos formatos:
+  - Formato brasileiro: 5.886,00
+  - Formatos mistos: R$ 5.886,00 ou 5.886,00
+  - Formatos simples: 5886,00
+- Limpeza automática de caracteres especiais
+- Conversão para float
 
-### Processamento
-- Threshold de similaridade: 0.7
-- Modelo de embeddings: `all-MiniLM-L6-v2`
-- **Geração de Embeddings**: A lógica foi otimizada em `src/processing/embeddings.py` para converter os dados para Pandas, gerar embeddings localmente com `SentenceTransformer`, e depois converter de volta para Spark DataFrame. Isso garante melhor compatibilidade e desempenho em clusters Databricks com modo de acesso compartilhado.
+## 🔍 Cálculo de Diferença Percentual
 
-## Troubleshooting
+- Calculado apenas para pares com similaridade >= 0.90
+- Fórmula: |p1 - p2| / ((p1 + p2) / 2) * 100
+- Resultado formatado com 2 casas decimais
 
-1.  **`ImportError` ou `JVM_ATTRIBUTE_NOT_SUPPORTED`**:
-    *   Certifique-se de que o cluster está configurado conforme o item "1. Configuração do Cluster".
-    *   **Execute SEMPRE** o `notebooks/00_setup_cluster.py` **com todas as células** antes de executar o pipeline principal. O comando `!pip install --upgrade --force-reinstall` é crucial para resolver problemas de carregamento de módulos e cache em ambientes Databricks.
-    *   O erro `[JVM_ATTRIBUTE_NOT_SUPPORTED]` ocorre em clusters de modo compartilhado ao tentar acessar `sparkContext` diretamente. As linhas ofensivas foram comentadas em `00_setup_cluster.py`.
+## 📈 Melhorias Recentes
 
-2.  **Erro de Permissão**:
-    *   Verificar acesso ao catálogo `bol` e às tabelas Delta.
-    *   Confirmar permissões de escrita nos diretórios do DBFS (`/FileStore/tables/`).
+1. **Processamento de Preços**:
+   - Regex mais preciso para formato brasileiro
+   - Limpeza básica como fallback
+   - Melhor tratamento de erros
 
-3.  **Erro de Memória / Desempenho**:
-    *   Aumentar o número máximo de workers no auto-escalonamento do cluster.
-    *   Ajustar configurações de memória do cluster, se necessário.
+2. **Classificação de Similaridade**:
+   - Novos thresholds: 0.85 e 0.5
+   - Categorias mais descritivas
+   - Melhor separação dos níveis
 
-4.  **Erro de Conexão (Scraping)**:
-    *   Verificar a conectividade de rede do cluster para a internet (sites do Magazine Luiza).
-    *   Confirmar que o cluster não está por trás de um proxy que impede as requisições.
+3. **Processamento de Dados**:
+   - Cálculo de similaridade em batch
+   - Uso de `itertuples` para melhor performance
+   - Remoção de processamento redundante
+
+4. **Estrutura do Código**:
+   - Injeção de dependências nos processadores
+   - Métodos mais focados e coesos
+   - Melhor organização do fluxo
+
+5. **Melhorias de Performance**:
+   - Cálculo de similaridade otimizado
+   - Processamento em batch quando possível
+   - Redução de operações redundantes
+
+6. **Salvamento de Dados**:
+   - TempView para consultas SQL
+   - Parquet para armazenamento permanente
+   - Melhor organização dos arquivos
+
+## 🤝 Contribuição
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
