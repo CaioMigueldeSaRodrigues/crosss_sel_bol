@@ -1,84 +1,93 @@
-# Benchmarking de Preços - Databricks
+# Product Recommendation System - Databricks
 
-Este projeto implementa um pipeline completo de benchmarking de preços no ambiente Databricks, integrando scraping, processamento de dados, análise de similaridade e geração de relatórios.
+This project implements a product recommendation system running on Databricks, combining multiple recommendation strategies:
+- Cross-selling recommendations based on purchase patterns
+- Similar product recommendations within the same category
+- Promotional product recommendations
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
-.
-├── benchmarking_databricks_unified.py  # Código principal unificado
-├── requirements.txt                    # Dependências do projeto
-├── README.md                          # Documentação
-└── notebooks/                         # Notebooks Databricks
-    └── 00_setup_cluster.py           # Configuração do cluster
+├── notebooks/                    # Databricks notebooks
+│   ├── 01_data_ingestion/       # Data loading and preprocessing
+│   ├── 02_feature_engineering/  # Feature creation and transformation
+│   └── 03_recommendations/      # Recommendation generation
+├── src/                         # Source code
+│   ├── data/                    # Data processing modules
+│   ├── models/                  # Recommendation models
+│   └── utils/                   # Utility functions
+├── sql/                         # SQL queries
+│   ├── cross_selling/          # Cross-selling related queries
+│   └── promotions/             # Promotional product queries
+└── config/                      # Configuration files
 ```
 
-## Funcionalidades
+## Features
 
-1. **Scraping de Produtos**
-   - Extração automatizada de produtos do Magazine Luiza
-   - Tratamento robusto de preços e nomes
-   - Geração de IDs únicos
+1. **Cross-Selling Recommendations**
+   - Analyzes purchase patterns to identify products frequently bought together
+   - Uses association rules mining to generate recommendations
 
-2. **Processamento de Dados**
-   - Limpeza e normalização de preços
-   - Processamento de texto com NLTK
-   - Geração de embeddings com SentenceTransformer
+2. **Similar Product Recommendations**
+   - Recommends products from the same category
+   - Considers product attributes and customer preferences
 
-3. **Análise de Similaridade**
-   - Cálculo de similaridade cosseno
-   - Identificação de pares de produtos similares
-   - Classificação de níveis de similaridade
+3. **Promotional Recommendations**
+   - Integrates with promotional data from Excel sheets
+   - Recommends products currently on promotion
 
-4. **Geração de Relatórios**
-   - Exportação para DBFS
-   - Geração de relatórios HTML
-   - Criação de TempViews para consultas
+## Technical Stack
 
-## Requisitos
+- **Platform**: Databricks
+- **Languages**: 
+  - Python
+  - PySpark
+  - SQL
+- **Data Sources**:
+  - Databricks Tables
+  - Excel Files (Promotions)
+  - OneDrive Integration
 
-- Python 3.8+
-- Databricks Runtime 10.4+
-- Bibliotecas listadas em `requirements.txt`
+## Setup and Configuration
 
-## Instalação
+1. **Databricks Environment**
+   - Ensure you have access to the required Databricks workspace
+   - Configure necessary permissions for OneDrive access
 
-1. Clone o repositório
-2. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. **Dependencies**
+   - Install required Python packages
+   - Configure Databricks libraries
 
-## Uso
+3. **Data Access**
+   - Set up connections to required data sources
+   - Configure authentication for OneDrive access
 
-1. Configure o cluster Databricks usando o notebook `00_setup_cluster.py`
-2. Execute o pipeline principal:
-   ```python
-   from benchmarking_databricks_unified import main
-   main()
-   ```
+## Usage
 
-## Configuração
+1. **Data Ingestion**
+   - Run the data ingestion notebooks to load and preprocess data
+   - Ensure all required tables are available
 
-O código utiliza as seguintes configurações padrão:
-- Threshold de similaridade: 0.7
-- Número máximo de páginas para scraping: 5
-- Modelo de embeddings: 'all-MiniLM-L6-v2'
+2. **Recommendation Generation**
+   - Execute the recommendation notebooks
+   - Monitor the results in the Databricks dashboard
 
-## Logs e Monitoramento
+3. **Promotional Updates**
+   - Update promotional data in the Excel sheet
+   - Run the promotional recommendation process
 
-- Logs são gerados em tempo real
-- Erros são capturados e registrados
-- Métricas de performance são monitoradas
+## Contributing
 
-## Contribuição
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
+## License
 
-## Licença
+This project is proprietary and confidential.
 
-Este projeto está licenciado sob a MIT License - veja o arquivo LICENSE para detalhes.
+## Contact
+
+For questions and support, please contact the development team.
