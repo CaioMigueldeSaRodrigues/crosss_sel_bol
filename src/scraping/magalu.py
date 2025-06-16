@@ -71,32 +71,60 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     # Extrair preço
                     preco_element = card.find('p', {'data-testid': 'price-value'})
                     if preco_element:
+                        # Log do HTML completo do elemento
+                        logger.info(f"[{categoria_nome}] HTML do elemento de preço: {preco_element}")
+                        
                         preco_texto = preco_element.text.strip()
                         logger.info(f"[{categoria_nome}] Preço original: '{preco_texto}'")
                         
-                        # Limpeza mais agressiva
-                        preco_texto = preco_texto.lower()  # Converte para minúsculo
-                        preco_texto = preco_texto.replace('ou r$', '')  # Remove 'ou r$'
-                        preco_texto = preco_texto.replace('r$', '')  # Remove 'r$'
-                        preco_texto = preco_texto.replace('ou', '')  # Remove 'ou' sozinho
-                        preco_texto = preco_texto.strip()  # Remove espaços
-                        
-                        # Remove pontos de milhar e substitui vírgula por ponto
-                        preco_texto = preco_texto.replace('.', '').replace(',', '.')
-                        
-                        logger.info(f"[{categoria_nome}] Preço após limpeza: '{preco_texto}'")
-                        
                         try:
-                            # Tenta extrair apenas números e ponto
+                            # Primeiro, vamos extrair apenas os números e caracteres relevantes
                             import re
-                            numeros = re.findall(r'\d+\.?\d*', preco_texto)
-                            if numeros:
-                                preco = float(numeros[0])
-                                logger.info(f"[{categoria_nome}] Preço convertido com sucesso: {preco}")
-                            else:
-                                logger.warning(f"[{categoria_nome}] Nenhum número encontrado no preço: '{preco_texto}'")
-                                preco = None
-                        except ValueError as e:
+                            
+                            # Log do preço antes de qualquer manipulação
+                            logger.info(f"[{categoria_nome}] Preço antes da limpeza: '{preco_texto}'")
+                            
+                            # Remove qualquer texto antes do primeiro número
+                            preco_texto = re.sub(r'^[^\d]*', '', preco_texto)
+                            logger.info(f"[{categoria_nome}] Após remover texto inicial: '{preco_texto}'")
+                            
+                            # Remove qualquer texto após o último número
+                            preco_texto = re.sub(r'[^\d]*$', '', preco_texto)
+                            logger.info(f"[{categoria_nome}] Após remover texto final: '{preco_texto}'")
+                            
+                            # Remove todos os caracteres que não são números, ponto ou vírgula
+                            preco_texto = re.sub(r'[^\d.,]', '', preco_texto)
+                            logger.info(f"[{categoria_nome}] Após remover caracteres especiais: '{preco_texto}'")
+                            
+                            # Se tiver mais de uma vírgula, mantém apenas a última
+                            if preco_texto.count(',') > 1:
+                                partes = preco_texto.split(',')
+                                preco_texto = ''.join(partes[:-1]) + ',' + partes[-1]
+                                logger.info(f"[{categoria_nome}] Após tratar múltiplas vírgulas: '{preco_texto}'")
+                            
+                            # Se tiver mais de um ponto, mantém apenas o último
+                            if preco_texto.count('.') > 1:
+                                partes = preco_texto.split('.')
+                                preco_texto = ''.join(partes[:-1]) + '.' + partes[-1]
+                                logger.info(f"[{categoria_nome}] Após tratar múltiplos pontos: '{preco_texto}'")
+                            
+                            # Se tiver vírgula e ponto, mantém apenas o último
+                            if ',' in preco_texto and '.' in preco_texto:
+                                if preco_texto.rindex(',') > preco_texto.rindex('.'):
+                                    preco_texto = preco_texto.replace('.', '')
+                                else:
+                                    preco_texto = preco_texto.replace(',', '')
+                                logger.info(f"[{categoria_nome}] Após tratar vírgula e ponto: '{preco_texto}'")
+                            
+                            # Converte vírgula para ponto se necessário
+                            preco_texto = preco_texto.replace(',', '.')
+                            logger.info(f"[{categoria_nome}] Preço final antes da conversão: '{preco_texto}'")
+                            
+                            # Tenta converter para float
+                            preco = float(preco_texto)
+                            logger.info(f"[{categoria_nome}] Preço convertido com sucesso: {preco}")
+                            
+                        except (ValueError, AttributeError) as e:
                             logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{preco_texto}' para float. Erro: {str(e)}")
                             preco = None
                     else:
