@@ -84,39 +84,15 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                             # Log do preço antes de qualquer manipulação
                             logger.info(f"[{categoria_nome}] Preço antes da limpeza: '{preco_texto}'")
                             
-                            # Remove qualquer texto antes do primeiro número
-                            preco_texto = re.sub(r'^[^\d]*', '', preco_texto)
-                            logger.info(f"[{categoria_nome}] Após remover texto inicial: '{preco_texto}'")
+                            # Remove "ou R$" e qualquer espaço em branco
+                            preco_texto = preco_texto.replace('ou R$', '').strip()
+                            logger.info(f"[{categoria_nome}] Após remover 'ou R$': '{preco_texto}'")
                             
-                            # Remove qualquer texto após o último número
-                            preco_texto = re.sub(r'[^\d]*$', '', preco_texto)
-                            logger.info(f"[{categoria_nome}] Após remover texto final: '{preco_texto}'")
+                            # Remove pontos de milhar
+                            preco_texto = preco_texto.replace('.', '')
+                            logger.info(f"[{categoria_nome}] Após remover pontos: '{preco_texto}'")
                             
-                            # Remove todos os caracteres que não são números, ponto ou vírgula
-                            preco_texto = re.sub(r'[^\d.,]', '', preco_texto)
-                            logger.info(f"[{categoria_nome}] Após remover caracteres especiais: '{preco_texto}'")
-                            
-                            # Se tiver mais de uma vírgula, mantém apenas a última
-                            if preco_texto.count(',') > 1:
-                                partes = preco_texto.split(',')
-                                preco_texto = ''.join(partes[:-1]) + ',' + partes[-1]
-                                logger.info(f"[{categoria_nome}] Após tratar múltiplas vírgulas: '{preco_texto}'")
-                            
-                            # Se tiver mais de um ponto, mantém apenas o último
-                            if preco_texto.count('.') > 1:
-                                partes = preco_texto.split('.')
-                                preco_texto = ''.join(partes[:-1]) + '.' + partes[-1]
-                                logger.info(f"[{categoria_nome}] Após tratar múltiplos pontos: '{preco_texto}'")
-                            
-                            # Se tiver vírgula e ponto, mantém apenas o último
-                            if ',' in preco_texto and '.' in preco_texto:
-                                if preco_texto.rindex(',') > preco_texto.rindex('.'):
-                                    preco_texto = preco_texto.replace('.', '')
-                                else:
-                                    preco_texto = preco_texto.replace(',', '')
-                                logger.info(f"[{categoria_nome}] Após tratar vírgula e ponto: '{preco_texto}'")
-                            
-                            # Converte vírgula para ponto se necessário
+                            # Substitui vírgula por ponto
                             preco_texto = preco_texto.replace(',', '.')
                             logger.info(f"[{categoria_nome}] Preço final antes da conversão: '{preco_texto}'")
                             
