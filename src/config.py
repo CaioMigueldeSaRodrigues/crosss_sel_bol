@@ -4,7 +4,7 @@ DATABRICKS_HOST = "adb-926216925051160.0.azuredatabricks.net"
 DATABRICKS_HTTP_PATH = "/sql/1.0/warehouses/ead9637a3263a02e"
 DATABRICKS_TOKEN = "dapi33029ae4a4617126aef5217bccc760a6 "
 
-SENDGRID_API_KEY = "SUA_SENDGRID_KEY"
+SENDGRID_API_KEY = "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"
 EMAIL_FROM = "caiomiguel@bemol.com.br"
 EMAIL_TO = ["renatobolf@bemol.com.br"]
 EMAIL_BCC = ["caiomiguel@bemol.com.br"]
@@ -70,10 +70,8 @@ STORAGE_CONFIG = {
 # Configurações de email
 EMAIL_CONFIG = {
     "enabled": True,
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 587,
+    "sendgrid_api_key": "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",
     "sender_email": "caiomiguel@bemol.com.br",
-    "sender_password": "SUA_SENHA",
     "recipients": ["renatobolf@bemol.com.br"],
     "bcc": ["caiomiguel@bemol.com.br"]
 }
