@@ -1,35 +1,22 @@
 # Databricks notebook source
 # COMMAND ----------
 
-# MAGIC %run ../src/config
+# Configurar o Python path para incluir o diretório src
+import sys
+import os
+sys.path.append(os.path.abspath('../src'))
 
 # COMMAND ----------
 
-# MAGIC %run ../src/scraping/magalu
-
-# COMMAND ----------
-
-# MAGIC %run ../src/scraping/bemol
-
-# COMMAND ----------
-
-# MAGIC %run ../src/processing/cleaning
-
-# COMMAND ----------
-
-# MAGIC %run ../src/processing/embeddings
-
-# COMMAND ----------
-
-# MAGIC %run ../src/analysis/similarity
-
-# COMMAND ----------
-
-# MAGIC %run ../src/export/export_excel
-
-# COMMAND ----------
-
-# MAGIC %run ../src/email/send_email
+# Importar módulos
+from config import *
+from scraping.magalu import scrape_magalu
+from scraping.bemol import scrape_bemol
+from processing.cleaning import clean_dataframe_prices
+from processing.embeddings import generate_embeddings
+from analysis.similarity import match_products
+from export.export_excel import export_to_excel
+from email.send_email import send_email
 
 # COMMAND ----------
 
@@ -107,12 +94,9 @@ try:
         print("Enviando email com resultados")
         subject = f"Scraping - Benchmarking de produtos - {datetime.now().strftime('%Y-%m-%d')}"
         html_content = df_final.limit(20).toPandas().to_html(index=False, escape=False)
-        send_email_with_attachment(
+        send_email(
             subject=subject,
-            html_content=html_content,
-            attachment_path=excel_path,
-            recipients=EMAIL_CONFIG['recipients'],
-            bcc=EMAIL_CONFIG['bcc']
+            html_content=html_content
         )
         print("Email enviado com sucesso")
     
