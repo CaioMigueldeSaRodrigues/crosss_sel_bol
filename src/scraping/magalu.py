@@ -68,22 +68,23 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     title_elem = card.select_one('h2')
                     title = title_elem.text.strip() if title_elem else "Título indisponível"
 
-                    price_elem = card.select_one('p[data-testid="price-value"]')
-                    price_str = price_elem.text.strip() if price_elem else None
-                    price = None
-                    if price_str:
+                    # Extrair preço
+                    preco_element = card.find('p', {'data-testid': 'price-value'})
+                    if preco_element:
+                        preco_texto = preco_element.text.strip()
+                        # Remove "ou R$" e qualquer espaço em branco no início
+                        preco_texto = preco_texto.replace('ou R$', '').strip()
+                        # Remove o símbolo da moeda e espaços
+                        preco_texto = preco_texto.replace('R$', '').strip()
+                        # Remove pontos de milhar e substitui vírgula por ponto
+                        preco_texto = preco_texto.replace('.', '').replace(',', '.')
                         try:
-                            # Primeiro remove o texto 'ou' e limpa espaços
-                            price_str = price_str.replace('ou', '').strip()
-                            # Remove R$ e limpa espaços novamente
-                            price_str = price_str.replace('R$', '').strip()
-                            # Remove pontos de milhar e substitui vírgula por ponto
-                            price_clean = price_str.replace('.', '').replace(',', '.').strip()
-                            # Tenta converter para float
-                            price = float(price_clean)
-                            logger.info(f"[{categoria_nome}] Preço convertido com sucesso: {price_str} -> {price}")
+                            preco = float(preco_texto)
                         except ValueError as e:
-                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{price_str}' para float. Erro: {str(e)}")
+                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{preco_texto}' para float.")
+                            preco = None
+                    else:
+                        preco = None
 
                     link_element = card.find_parent('a')
                     product_relative_url = link_element['href'] if link_element else ""
@@ -91,7 +92,7 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
 
                     produtos.append({
                         'title': title,
-                        'price': price,
+                        'price': preco,
                         'url': product_url,
                         'source': 'magalu',
                         'extraction_date': datetime.now()
