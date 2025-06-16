@@ -17,19 +17,21 @@
 
 # Instalar bibliotecas necessárias
 # Usando versões compatíveis com o runtime do Spark 3.5.2
-%pip install sentence-transformers==2.2.2
-%pip install pandas==2.1.4
-%pip install openpyxl==3.1.2
-%pip install beautifulsoup4==4.12.2
-%pip install requests==2.31.0
-%pip install sendgrid==6.10.0
-%pip install delta-spark==3.0.0
-%pip install scikit-learn==1.3.2
-%pip install databricks-sql-connector==2.9.3
-%pip install sqlalchemy==2.0.23
-%pip install pyhive==0.7.0
-%pip install mlflow==2.8.1
-%pip install rich==13.7.0
+%pip install --upgrade --force-reinstall sentence-transformers==2.2.2
+%pip install --upgrade --force-reinstall pandas==2.1.4
+%pip install --upgrade --force-reinstall openpyxl==3.1.2
+%pip install --upgrade --force-reinstall beautifulsoup4==4.12.2
+%pip install --upgrade --force-reinstall requests==2.31.0
+%pip install --upgrade --force-reinstall sendgrid==6.10.0
+%pip install --upgrade --force-reinstall delta-spark==3.0.0
+%pip install --upgrade --force-reinstall scikit-learn==1.3.2
+%pip install --upgrade --force-reinstall databricks-sql-connector==2.9.3
+%pip install --upgrade --force-reinstall sqlalchemy==2.0.23
+%pip install --upgrade --force-reinstall pyhive==0.7.0
+%pip install --upgrade --force-reinstall mlflow==2.8.1
+%pip install --upgrade --force-reinstall rich==13.7.0
+%pip install --upgrade --force-reinstall python-dotenv==1.0.0
+%pip install --upgrade --force-reinstall numpy==1.24.3
 
 # COMMAND ----------
 
