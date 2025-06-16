@@ -73,13 +73,17 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     price = None
                     if price_str:
                         try:
-                            # Remove "ou" e outros textos antes do preço
+                            # Primeiro remove o texto 'ou' e limpa espaços
                             price_str = price_str.replace('ou', '').strip()
-                            # Ajuste para lidar com preços como R$ 1.234,56
-                            price_clean = price_str.replace('R$', '').replace('.', '').replace(',', '.').strip()
+                            # Remove R$ e limpa espaços novamente
+                            price_str = price_str.replace('R$', '').strip()
+                            # Remove pontos de milhar e substitui vírgula por ponto
+                            price_clean = price_str.replace('.', '').replace(',', '.').strip()
+                            # Tenta converter para float
                             price = float(price_clean)
-                        except ValueError:
-                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{price_str}' para float.")
+                            logger.info(f"[{categoria_nome}] Preço convertido com sucesso: {price_str} -> {price}")
+                        except ValueError as e:
+                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{price_str}' para float. Erro: {str(e)}")
 
                     link_element = card.find_parent('a')
                     product_relative_url = link_element['href'] if link_element else ""
