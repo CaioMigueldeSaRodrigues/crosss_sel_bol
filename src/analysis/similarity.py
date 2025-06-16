@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, udf, lit, current_timestamp
+from pyspark.sql.functions import col, udf, lit, current_timestamp, regexp_replace, when
 from pyspark.sql.types import DoubleType, ArrayType, FloatType
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -70,6 +70,17 @@ def match_products(df_magalu, df_bemol, similarity_threshold=SIMILARITY_THRESHOL
         
         df_bemol = df_bemol.withColumn("embedding", generate_embedding(col("title"))) \
                           .withColumn("extraction_date", current_timestamp())
+
+        # Limpa preços antes do matching
+        df_magalu = df_magalu.withColumn("price", 
+            when(col("price").isNotNull(), 
+                 regexp_replace(col("price"), "ou R$|ouR$|ou|R$", "").cast("double"))
+            .otherwise(None))
+        
+        df_bemol = df_bemol.withColumn("price",
+            when(col("price").isNotNull(),
+                 regexp_replace(col("price"), "ou R$|ouR$|ou|R$", "").cast("double"))
+            .otherwise(None))
 
         # Renomeia colunas para evitar conflitos
         df_magalu_renamed = df_magalu.withColumnRenamed("title", "magalu_title") \
