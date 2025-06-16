@@ -73,6 +73,8 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     price = None
                     if price_str:
                         try:
+                            # Remove "ou" e outros textos antes do preço
+                            price_str = price_str.replace('ou', '').strip()
                             # Ajuste para lidar com preços como R$ 1.234,56
                             price_clean = price_str.replace('R$', '').replace('.', '').replace(',', '.').strip()
                             price = float(price_clean)
