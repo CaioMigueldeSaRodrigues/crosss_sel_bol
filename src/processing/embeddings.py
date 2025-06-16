@@ -1,10 +1,10 @@
 from pyspark.sql.functions import col, udf, lit
-from pyspark.sql.types import ArrayType, FloatType
+from pyspark.sql.types import ArrayType, FloatType, StructType, StructField, StringType
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import logging
 import pandas as pd
-from ..config import EMBEDDING_MODEL, BATCH_SIZE
+from config import EMBEDDING_MODEL, BATCH_SIZE
 
 def generate_embeddings_from_delta(spark, table_name="bol.feed_varejo_vtex", batch_size=32):
     """
@@ -47,39 +47,49 @@ def generate_embeddings_from_delta(spark, table_name="bol.feed_varejo_vtex", bat
         logging.error(f"Erro durante a geração de embeddings: {str(e)}")
         return None
 
-def generate_dataframe_embeddings(df, column_name="title", batch_size=32):
+def generate_dataframe_embeddings(df, column_name="title"):
     """
-    Gera embeddings para os títulos dos produtos usando Sentence Transformers
+    Gera embeddings para os títulos dos produtos usando Sentence Transformers.
+    Converte o Spark DataFrame para Pandas, processa, e converte de volta para Spark.
     
     Args:
-        df (DataFrame): DataFrame Spark com os dados
-        column_name (str): Nome da coluna de texto para gerar embeddings
-        batch_size (int): Tamanho do batch para processamento
+        df (DataFrame): DataFrame Spark com os dados.
+        column_name (str): Nome da coluna de texto para gerar embeddings.
         
     Returns:
-        DataFrame: DataFrame com embeddings adicionados
+        DataFrame: DataFrame Spark com embeddings adicionados.
     """
     try:
-        # Carrega o modelo
-        model = SentenceTransformer('all-MiniLM-L6-v2')
-        
-        # Define UDF para gerar embeddings
-        @udf(returnType=ArrayType(FloatType()))
-        def generate_embedding(text):
-            if text is None:
-                return None
-            embedding = model.encode(text)
-            return embedding.tolist()
-        
-        # Gera embeddings
-        df = df.withColumn("embedding", generate_embedding(col(column_name)))
-        
-        logging.info("Geração de embeddings concluída com sucesso")
-        return df
-        
+        # Carrega o modelo de embeddings
+        model = SentenceTransformer(EMBEDDING_MODEL)
+
+        # Converte o DataFrame Spark para Pandas DataFrame
+        df_pandas = df.toPandas()
+
+        # Gera embeddings na coluna especificada no DataFrame Pandas
+        # Garante que None ou NaN em 'title' não causem erro de encode
+        df_pandas["embedding"] = df_pandas[column_name].apply(lambda x: model.encode(x).tolist() if pd.notna(x) else None)
+
+        # Preserva o schema original e adiciona o campo 'embedding'
+        existing_fields = df.schema.fields
+        # Remove o campo 'embedding' se já existir (para idempotência)
+        existing_fields = [f for f in existing_fields if f.name != "embedding"]
+        output_schema = StructType(existing_fields + [StructField("embedding", ArrayType(FloatType()), True)])
+
+        # Converte o DataFrame Pandas de volta para Spark DataFrame
+        # Usar df.sparkSession para garantir que a SparkSession correta seja usada
+        spark_df_with_embeddings = df.sparkSession.createDataFrame(df_pandas, schema=output_schema)
+
+        logging.info("Geração de embeddings concluída com sucesso (via Pandas).")
+        return spark_df_with_embeddings
+
     except Exception as e:
-        logging.error(f"Erro durante a geração de embeddings: {str(e)}")
-        return df
+        logging.error(f"Erro durante a geração de embeddings (via Pandas): {str(e)}")
+        # Em caso de erro, retorna um DataFrame Spark vazio com o schema esperado para evitar erros downstream
+        empty_schema = df.schema
+        if "embedding" not in [f.name for f in empty_schema.fields]:
+            empty_schema = StructType(empty_schema.fields + [StructField("embedding", ArrayType(FloatType()), True)])
+        return df.sparkSession.createDataFrame([], schema=empty_schema)
 
 def generate_text_embeddings(texts, model_name=EMBEDDING_MODEL, batch_size=BATCH_SIZE):
     """

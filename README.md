@@ -15,14 +15,14 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 │   │   └── bemol.py
 │   ├── processing/
 │   │   ├── cleaning.py
-│   │   └── embeddings.py
+│   │   └── embeddings.py      # Lógica de geração de embeddings
 │   ├── analysis/
-│   │   └── similarity.py
+│   │   └── similarity.py      # Lógica de similaridade e pareamento
 │   ├── export/
 │   │   └── export_excel.py
 │   ├── email/
 │   │   └── send_email.py
-│   └── config.py
+│   └── config.py              # Configurações globais
 └── requirements.txt
 ```
 
@@ -30,22 +30,13 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 
 ### 1. Configuração do Cluster
 
-1. Crie um novo cluster no Databricks:
-   - Runtime: 13.3 LTS (includes Apache Spark 3.4.1, Scala 2.12)
-   - Node Type: Standard_DS3_v2 (recomendado)
-   - Min Workers: 1
-   - Max Workers: 2
-
-2. Adicione as seguintes bibliotecas ao cluster:
-   ```
-   sentence-transformers==2.2.2
-   pandas==2.1.4
-   openpyxl==3.1.2
-   beautifulsoup4==4.12.2
-   requests==2.31.0
-   sendgrid==6.10.0
-   delta-spark==3.0.0
-   ```
+Para melhor desempenho e compatibilidade, utilize as seguintes configurações no seu cluster Databricks (Cluster ID: `0521-212707-5nlw5qu4`, Nome: `DATA-ONLINE-01`):
+   - **Runtime**: `16.2.x-scala2.12` (ou versão compatível com Apache Spark 3.5.0 e Delta Lake 3.0.0)
+   - **Tipo de Nó (Driver)**: `Standard_D16_v3`
+   - **Tipo de Nó (Workers)**: `Standard_DS3_v2`
+   - **Auto-escalonamento**: Mínimo de 1 worker, Máximo de 4 workers.
+   - **Modo de Acesso**: `User Isolation` (ou Compartilhado)
+   - **Bibliotecas**: As bibliotecas Python necessárias serão instaladas automaticamente pelo notebook `00_setup_cluster.py` usando `%pip install --upgrade --force-reinstall`. Certifique-se de que o cluster tenha acesso à internet para download das dependências.
 
 ### 2. Configuração do Repositório
 
@@ -57,21 +48,20 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 
 ### 3. Execução do Pipeline
 
-1. Execute o notebook de setup:
+1. **Execute o notebook de setup:**
    - Abra `notebooks/00_setup_cluster.py`
    - Conecte ao cluster configurado
-   - Execute todas as células
-   - Reinicie o cluster para aplicar as alterações
-
-2. Execute o pipeline principal:
+   - **Execute TODAS as células.** Este notebook garante que o ambiente Python esteja configurado corretamente (incluindo o `sys.path` e todas as bibliotecas).
+   
+2. **Execute o pipeline principal:**
    - Abra `notebooks/01_main_pipeline.py`
    - Conecte ao cluster configurado
-   - Execute todas as células
+   - **Execute TODAS as células.** A `SparkSession` será automaticamente injetada pelo Databricks, e o pipeline usará as funções otimizadas.
 
 ## Tabelas Delta
 
 ### Tabelas de Origem
-- `bol.feed_varejo_vtex`: Produtos da Bemol
+- `bol.feed_varejo_vtex`: Produtos da Bemol (verifique se esta tabela existe no seu Unity Catalog/Hive Metastore)
 
 ### Tabelas Geradas
 - `bol.raw_magalu_products`: Produtos brutos do Magazine Luiza
@@ -81,29 +71,29 @@ Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os p
 ## Configurações
 
 ### Email
-- API Key do SendGrid configurada em `src/config.py`
+- API Key do SendGrid configurada em `src/config.py` (Variável de ambiente `SENDGRID_API_KEY` é recomendada)
 - Destinatários configurados em `EMAIL_CONFIG`
 
 ### Processamento
 - Threshold de similaridade: 0.7
-- Modelo de embeddings: all-MiniLM-L6-v2
-- Batch size: 1000
+- Modelo de embeddings: `all-MiniLM-L6-v2`
+- **Geração de Embeddings**: A lógica foi otimizada em `src/processing/embeddings.py` para converter os dados para Pandas, gerar embeddings localmente com `SentenceTransformer`, e depois converter de volta para Spark DataFrame. Isso garante melhor compatibilidade e desempenho em clusters Databricks com modo de acesso compartilhado.
 
 ## Troubleshooting
 
-1. **Erro de Biblioteca**:
-   - Execute o notebook `00_setup_cluster.py`
-   - Verifique se todas as bibliotecas foram instaladas
-   - Reinicie o cluster
+1.  **`ImportError` ou `JVM_ATTRIBUTE_NOT_SUPPORTED`**:
+    *   Certifique-se de que o cluster está configurado conforme o item "1. Configuração do Cluster".
+    *   **Execute SEMPRE** o `notebooks/00_setup_cluster.py` **com todas as células** antes de executar o pipeline principal. O comando `!pip install --upgrade --force-reinstall` é crucial para resolver problemas de carregamento de módulos e cache em ambientes Databricks.
+    *   O erro `[JVM_ATTRIBUTE_NOT_SUPPORTED]` ocorre em clusters de modo compartilhado ao tentar acessar `sparkContext` diretamente. As linhas ofensivas foram comentadas em `00_setup_cluster.py`.
 
-2. **Erro de Permissão**:
-   - Verificar acesso ao catálogo `bol`
-   - Confirmar permissões no DBFS
+2.  **Erro de Permissão**:
+    *   Verificar acesso ao catálogo `bol` e às tabelas Delta.
+    *   Confirmar permissões de escrita nos diretórios do DBFS (`/FileStore/tables/`).
 
-3. **Erro de Memória**:
-   - Aumentar número de workers
-   - Ajustar configurações de memória do cluster
+3.  **Erro de Memória / Desempenho**:
+    *   Aumentar o número máximo de workers no auto-escalonamento do cluster.
+    *   Ajustar configurações de memória do cluster, se necessário.
 
-4. **Erro de Conexão**:
-   - Verificar token do Databricks
-   - Confirmar configurações de rede
+4.  **Erro de Conexão (Scraping)**:
+    *   Verificar a conectividade de rede do cluster para a internet (sites do Magazine Luiza).
+    *   Confirmar que o cluster não está por trás de um proxy que impede as requisições.

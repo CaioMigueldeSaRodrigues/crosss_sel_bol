@@ -1,7 +1,7 @@
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
 import pandas as pd
-from ..config import EMAIL_CONFIG
+from config import EMAIL_CONFIG
 
 def send_email(subject, html_content):
     """
