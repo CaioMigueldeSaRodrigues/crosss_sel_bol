@@ -92,18 +92,13 @@ for lib in required_libraries:
 
 # COMMAND ----------
 
-import os
 import logging
 
-# Garante que o diretório existe
-os.makedirs("/dbfs/FileStore/logs", exist_ok=True)
-
-# Configurar logging
+# Configurar logging apenas para o console (Databricks salva logs do notebook automaticamente)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("/dbfs/FileStore/logs/setup.log"),
         logging.StreamHandler()
     ]
 )
