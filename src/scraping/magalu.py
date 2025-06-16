@@ -71,30 +71,15 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     # Extrair preço
                     preco_element = card.find('p', {'data-testid': 'price-value'})
                     if preco_element:
-                        # Log do HTML completo do elemento
-                        logger.info(f"[{categoria_nome}] HTML do elemento de preço: {preco_element}")
-                        
                         preco_texto = preco_element.text.strip()
                         logger.info(f"[{categoria_nome}] Preço original: '{preco_texto}'")
                         
                         try:
-                            # Primeiro, vamos extrair apenas os números e caracteres relevantes
-                            import re
-                            
-                            # Log do preço antes de qualquer manipulação
-                            logger.info(f"[{categoria_nome}] Preço antes da limpeza: '{preco_texto}'")
-                            
                             # Remove "ou R$" e qualquer espaço em branco
                             preco_texto = preco_texto.replace('ou R$', '').strip()
-                            logger.info(f"[{categoria_nome}] Após remover 'ou R$': '{preco_texto}'")
                             
-                            # Remove pontos de milhar
-                            preco_texto = preco_texto.replace('.', '')
-                            logger.info(f"[{categoria_nome}] Após remover pontos: '{preco_texto}'")
-                            
-                            # Substitui vírgula por ponto
-                            preco_texto = preco_texto.replace(',', '.')
-                            logger.info(f"[{categoria_nome}] Preço final antes da conversão: '{preco_texto}'")
+                            # Remove pontos de milhar e substitui vírgula por ponto
+                            preco_texto = preco_texto.replace('.', '').replace(',', '.')
                             
                             # Tenta converter para float
                             preco = float(preco_texto)
