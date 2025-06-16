@@ -16,7 +16,7 @@ from processing.cleaning import clean_dataframe_prices
 from processing.embeddings import generate_embeddings
 from analysis.similarity import match_products
 from export.export_excel import export_to_excel
-from email.send_email import send_email
+from src.email.send_email import send_email
 
 # COMMAND ----------
 
