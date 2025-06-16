@@ -1,6 +1,6 @@
 # Scraping Benchmarking - Databricks
 
-Projeto de benchmarking de preços entre Magazine Luiza e Bemol, executado no Databricks.
+Este projeto realiza o scraping de produtos do Magazine Luiza e compara com os produtos da Bemol, utilizando Databricks para processamento e armazenamento.
 
 ## Estrutura do Projeto
 
@@ -9,102 +9,95 @@ Projeto de benchmarking de preços entre Magazine Luiza e Bemol, executado no Da
 ├── notebooks/
 │   └── 01_main_pipeline.py
 ├── src/
-│   ├── __init__.py
-│   ├── config.py
 │   ├── scraping/
-│   │   ├── __init__.py
 │   │   ├── magalu.py
 │   │   └── bemol.py
 │   ├── processing/
-│   │   ├── __init__.py
 │   │   ├── cleaning.py
 │   │   └── embeddings.py
 │   ├── analysis/
-│   │   ├── __init__.py
 │   │   └── similarity.py
 │   ├── export/
-│   │   ├── __init__.py
 │   │   └── export_excel.py
-│   └── email/
-│       ├── __init__.py
-│       └── send_email.py
+│   ├── email/
+│   │   └── send_email.py
+│   └── config.py
 └── requirements.txt
 ```
 
-## Configuração do Ambiente
+## Configuração do Ambiente Databricks
 
-1. **Cluster Databricks**:
+1. **Cluster Configuration**:
    - Runtime: 13.3 LTS (includes Apache Spark 3.4.1, Scala 2.12)
-   - Node Type: Standard_DS3_v2 (ou similar)
+   - Node Type: Standard_DS3_v2 (recomendado)
    - Min Workers: 1
    - Max Workers: 2
 
 2. **Bibliotecas Necessárias**:
-   - sentence-transformers==2.2.2
-   - pandas==2.1.4
-   - openpyxl==3.1.2
-   - beautifulsoup4==4.12.2
-   - requests==2.31.0
+   ```
+   sentence-transformers==2.2.2
+   pandas==2.1.4
+   openpyxl==3.1.2
+   beautifulsoup4==4.12.2
+   requests==2.31.0
+   sendgrid==6.10.0
+   ```
 
 3. **Permissões Necessárias**:
-   - Acesso ao catalog 'bol'
-   - Permissões de leitura/escrita nas tabelas
-   - Acesso ao DBFS para exportação de arquivos
+   - Acesso à tabela `bol.feed_varejo_vtex`
+   - Permissão para criar tabelas no catálogo `bol`
+   - Acesso ao DBFS para armazenamento de arquivos
 
 ## Tabelas Delta
 
-O projeto utiliza as seguintes tabelas no catalog 'bol':
+### Tabelas de Origem
+- `bol.feed_varejo_vtex`: Produtos da Bemol
 
-1. **Tabelas de Origem**:
-   - `bol.feed_varejo_vtex`: Dados dos produtos da Bemol
-
-2. **Tabelas Geradas**:
-   - `bol.raw_magalu_products`: Dados brutos do Magazine Luiza
-   - `bol.raw_bemol_products`: Dados brutos da Bemol
-   - `bol.processed_magalu_products`: Dados processados do Magazine Luiza
-   - `bol.processed_bemol_products`: Dados processados da Bemol
-   - `bol.product_matches`: Resultados do matching de produtos
+### Tabelas Geradas
+- `bol.raw_magalu_products`: Produtos brutos do Magazine Luiza
+- `bol.processed_magalu_products`: Produtos processados do Magazine Luiza
+- `bol.product_matches`: Produtos correspondentes entre as lojas
 
 ## Execução
 
-1. **Notebook Principal**:
-   - Localização: `/notebooks/01_main_pipeline.py`
-   - Executa o pipeline completo de scraping, processamento e matching
+1. **Preparação**:
+   ```python
+   %fs mkdirs /FileStore/tables/raw
+   %fs mkdirs /FileStore/tables/processed
+   %fs mkdirs /FileStore/tables/exports
+   %fs mkdirs /FileStore/logs
+   ```
 
-2. **Job Databricks**:
-   - Criar job no Databricks Workflows
-   - Adicionar notebook principal como tarefa
-   - Configurar agendamento (se necessário)
+2. **Execução do Pipeline**:
+   - Abra o notebook `notebooks/01_main_pipeline.py`
+   - Conecte ao cluster configurado
+   - Execute todas as células
 
 ## Configurações
 
-As configurações do projeto estão no arquivo `src/config.py`:
+### Email
+- API Key do SendGrid configurada em `src/config.py`
+- Destinatários configurados em `EMAIL_CONFIG`
 
-1. **Email**:
-   - Configurações SMTP para envio de relatórios
-   - Lista de destinatários
-
-2. **Processamento**:
-   - Threshold de similaridade para matching
-   - Tamanho do batch para processamento
-
-3. **Armazenamento**:
-   - Caminhos para exportação de arquivos
-   - Configurações de logging
+### Processamento
+- Threshold de similaridade: 0.7
+- Modelo de embeddings: all-MiniLM-L6-v2
+- Batch size: 1000
 
 ## Troubleshooting
 
 1. **Erro de Permissão**:
-   - Verificar acesso ao catalog 'bol'
-   - Verificar permissões nas tabelas
-   - Verificar acesso ao DBFS
+   - Verificar acesso ao catálogo `bol`
+   - Confirmar permissões no DBFS
 
 2. **Erro de Memória**:
    - Aumentar número de workers
-   - Ajustar tamanho do batch
-   - Otimizar queries
+   - Ajustar configurações de memória do cluster
 
 3. **Erro de Biblioteca**:
-   - Verificar instalação das bibliotecas no cluster
-   - Verificar versões compatíveis
-   - Reiniciar cluster se necessário
+   - Verificar versões das bibliotecas
+   - Reinstalar bibliotecas no cluster
+
+4. **Erro de Conexão**:
+   - Verificar token do Databricks
+   - Confirmar configurações de rede

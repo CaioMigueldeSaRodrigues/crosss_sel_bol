@@ -14,18 +14,19 @@ DATABRICKS_CONFIG = {
     "host": "adb-926216925051160.0.azuredatabricks.net",
     "http_path": "/sql/1.0/warehouses/ead9637a3263a02e",
     "token": "dapi33029ae4a4617126aef5217bccc760a6",
-    "catalog": "hive_metastore",
-    "schema": "bronze"
+    "catalog": "bol",
+    "schema": "default"
 }
 
 # Configurações do Spark
 SPARK_CONFIG = {
     "app_name": "Scraping Benchmarking",
-    "master": "local[*]",
     "configs": {
         "spark.sql.warehouse.dir": "/dbfs/FileStore/tables/warehouse",
         "spark.databricks.delta.optimizeWrite.enabled": "true",
-        "spark.databricks.delta.autoCompact.enabled": "true"
+        "spark.databricks.delta.autoCompact.enabled": "true",
+        "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+        "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     }
 }
 
@@ -64,7 +65,13 @@ PROCESSING_CONFIG = {
 STORAGE_CONFIG = {
     "raw_path": "/dbfs/FileStore/tables/raw",
     "processed_path": "/dbfs/FileStore/tables/processed",
-    "exports_path": "/dbfs/FileStore/tables/exports"
+    "exports_path": "/dbfs/FileStore/tables/exports",
+    "delta_tables": {
+        "bemol": "bol.feed_varejo_vtex",
+        "magalu_raw": "bol.raw_magalu_products",
+        "magalu_processed": "bol.processed_magalu_products",
+        "matches": "bol.product_matches"
+    }
 }
 
 # Configurações de email

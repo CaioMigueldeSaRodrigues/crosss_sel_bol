@@ -3,10 +3,11 @@ pandas==2.1.4
 openpyxl==3.1.2
 beautifulsoup4==4.12.2
 requests==2.31.0
+sendgrid==6.10.0
+delta-spark==3.0.0
+pyspark==3.4.1
 scikit-learn
-pyspark
 databricks-sql-connector
-sendgrid
 sqlalchemy
 pyhive
 mlflow
