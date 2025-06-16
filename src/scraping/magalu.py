@@ -75,17 +75,23 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                         preco_texto = preco_element.text.strip()
                         
                         try:
-                            # Extrai apenas os números e a vírgula
-                            numeros = re.findall(r'[\d,]+', preco_texto)
-                            if numeros:
-                                # Pega o primeiro número encontrado
-                                preco_texto = numeros[0]
-                                # Remove pontos de milhar e substitui vírgula por ponto
-                                preco_texto = preco_texto.replace('.', '').replace(',', '.')
+                            # Remover o prefixo "ou R$" e outros caracteres invisíveis/desnecessários
+                            preco_texto = preco_texto.replace('ou R$', '').replace('\xa0', ' ').strip()
+
+                            # Tenta extrair usando regex para formato brasileiro (X.XXX,XX)
+                            match = re.search(r'(\d{1,3}(?:\.\d{3})*?,\d{2})', preco_texto)
+                            if match:
+                                preco_texto = match.group(1).replace('.', '').replace(',', '.')
                                 preco = float(preco_texto)
                             else:
-                                preco = None
+                                # Fallback: remover todos os não-números exceto vírgula, e depois substituir vírgula por ponto
+                                preco_texto_limpo = re.sub(r'[^\d,]', '', preco_texto)
+                                if preco_texto_limpo:
+                                    preco = float(preco_texto_limpo.replace(',', '.'))
+                                else:
+                                    preco = None
                         except (ValueError, AttributeError) as e:
+                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{preco_texto}' para float. Erro: {e}")
                             preco = None
                     else:
                         logger.warning(f"[{categoria_nome}] Elemento de preço não encontrado")
