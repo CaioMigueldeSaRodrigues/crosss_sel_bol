@@ -23,6 +23,10 @@ wheels/
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
+# Databricks
+.metabricks/
+.metabricksignore
+.metabricksignore~
 
 # Virtual Environment
 venv/
@@ -40,6 +44,7 @@ env/
 .dbfs/
 
 # Logs
+logs/
 *.log
 
 # Local development
