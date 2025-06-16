@@ -71,22 +71,34 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     # Extrair preço
                     preco_element = card.find('p', {'data-testid': 'price-value'})
                     if preco_element:
+                        # Log do HTML completo do elemento de preço
+                        logger.error(f"[{categoria_nome}] HTML COMPLETO DO ELEMENTO: {preco_element}")
+                        logger.error(f"[{categoria_nome}] HTML COMO STRING: {str(preco_element)}")
+                        
                         preco_texto = preco_element.text.strip()
-                        logger.info(f"[{categoria_nome}] Preço original: '{preco_texto}'")
+                        logger.error(f"[{categoria_nome}] TEXTO EXTRAÍDO: '{preco_texto}'")
                         
                         try:
-                            # Remove "ou R$" e qualquer espaço em branco
-                            preco_texto = preco_texto.replace('ou R$', '').strip()
+                            # Remove qualquer texto antes do R$
+                            if 'R$' in preco_texto:
+                                preco_texto = preco_texto.split('R$')[-1].strip()
+                                logger.error(f"[{categoria_nome}] APÓS SPLIT R$: '{preco_texto}'")
+                            
+                            # Remove qualquer texto após o número
+                            preco_texto = preco_texto.split()[0]
+                            logger.error(f"[{categoria_nome}] APÓS PEGAR PRIMEIRO NÚMERO: '{preco_texto}'")
                             
                             # Remove pontos de milhar e substitui vírgula por ponto
                             preco_texto = preco_texto.replace('.', '').replace(',', '.')
+                            logger.error(f"[{categoria_nome}] APÓS CONVERSÃO: '{preco_texto}'")
                             
                             # Tenta converter para float
                             preco = float(preco_texto)
-                            logger.info(f"[{categoria_nome}] Preço convertido com sucesso: {preco}")
+                            logger.error(f"[{categoria_nome}] CONVERSÃO FINAL: {preco}")
                             
-                        except (ValueError, AttributeError) as e:
-                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{preco_texto}' para float. Erro: {str(e)}")
+                        except (ValueError, AttributeError, IndexError) as e:
+                            logger.error(f"[{categoria_nome}] ERRO NA CONVERSÃO: {str(e)}")
+                            logger.error(f"[{categoria_nome}] TEXTO QUE FALHOU: '{preco_texto}'")
                             preco = None
                     else:
                         logger.warning(f"[{categoria_nome}] Elemento de preço não encontrado")
