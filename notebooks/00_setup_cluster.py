@@ -1,5 +1,4 @@
 # Databricks notebook source
-%pip install --upgrade sentence-transformers
 # COMMAND ----------
 
 # MAGIC %md
@@ -17,8 +16,20 @@
 # COMMAND ----------
 
 # Instalar bibliotecas necessárias
-# Forçar reinstalação/atualização para garantir que o ambiente carregue as versões corretas
-!pip install --upgrade --force-reinstall sentence-transformers==2.2.2 pandas==2.1.4 openpyxl==3.1.2 beautifulsoup4==4.12.2 requests==2.31.0 sendgrid==6.10.0 delta-spark==3.0.0 pyspark==3.5.0 scikit-learn databricks-sql-connector sqlalchemy pyhive mlflow rich
+# Usando versões compatíveis com o runtime 16.2.x
+!pip install sentence-transformers==2.2.2
+!pip install pandas==2.1.4
+!pip install openpyxl==3.1.2
+!pip install beautifulsoup4==4.12.2
+!pip install requests==2.31.0
+!pip install sendgrid==6.10.0
+!pip install delta-spark==3.0.0
+!pip install scikit-learn==1.3.2
+!pip install databricks-sql-connector==2.9.3
+!pip install sqlalchemy==2.0.23
+!pip install pyhive==0.7.0
+!pip install mlflow==2.8.1
+!pip install rich==13.7.0
 
 # COMMAND ----------
 
@@ -75,7 +86,6 @@ required_libraries = [
     'requests',
     'sendgrid',
     'delta',
-    'pyspark',
     'sklearn',
     'databricks',
     'sqlalchemy',
@@ -125,15 +135,12 @@ logger.info("Setup do ambiente concluído com sucesso!")
 
 # COMMAND ----------
 
-# As configurações do Spark são gerenciadas pelo Databricks em clusters compartilhados
-# O acesso direto a spark.sparkContext.getConf().getAll() não é suportado no modo de usuário isolado.
-# As configurações já fornecidas no JSON são suficientes para entender a configuração do cluster.
-# Se desejar verificar configurações específicas via código, use spark.conf.get('spark.property.name')
-# ou utilize a interface do Databricks para inspecionar as configurações do cluster.
-# spark_conf = spark.sparkContext.getConf().getAll()
-# print("\nConfigurações do Spark:")
-# for conf in spark_conf:
-#     print(f"{conf[0]}: {conf[1]}")
+# Verificar configurações do Spark
+print("Configurações do Spark:")
+print(f"Spark Version: {spark.version}")
+print(f"Driver Memory: {spark.conf.get('spark.driver.memory')}")
+print(f"Max Result Size: {spark.conf.get('spark.driver.maxResultSize')}")
+print(f"Delta Preview: {spark.conf.get('spark.databricks.delta.preview.enabled')}")
 
 # COMMAND ----------
 
