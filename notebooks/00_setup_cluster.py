@@ -56,7 +56,6 @@ print(f"scikit-learn: {sklearn.__version__}")
 print(f"requests: {requests.__version__}")
 print(f"beautifulsoup4: {bs4.__version__}")
 print(f"openpyxl: {openpyxl.__version__}")
-print(f"delta-spark: {delta.__version__}")
 print(f"mlflow: {mlflow.__version__}")
 print(f"rich: {rich.__version__}")
 
