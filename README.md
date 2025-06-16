@@ -1,132 +1,84 @@
-# Scraping Benchmarking
+# Benchmarking de Preços - Databricks
 
-Projeto para benchmarking de preços entre marketplaces usando processamento de texto e similaridade de embeddings.
+Este projeto implementa um pipeline completo de benchmarking de preços no ambiente Databricks, integrando scraping, processamento de dados, análise de similaridade e geração de relatórios.
 
-## 🚀 Funcionalidades
-
-- Processamento de texto com NLTK
-- Geração de embeddings com Sentence Transformers
-- Cálculo de similaridade usando cosine similarity
-- Limpeza e padronização de preços
-- Classificação de similaridade em níveis
-- Cálculo de diferença percentual entre preços
-- Integração com Databricks
-
-## 📦 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
-scraping_benchmarking/
-├── notebooks/
-│   └── 00_setup_cluster.py
-├── src/
-│   └── scraping/
-│       └── magalu.py
-├── benchmarking_improved.py
-├── benchmarking_databricks.py
-└── requirements.txt
+.
+├── benchmarking_databricks_unified.py  # Código principal unificado
+├── requirements.txt                    # Dependências do projeto
+├── README.md                          # Documentação
+└── notebooks/                         # Notebooks Databricks
+    └── 00_setup_cluster.py           # Configuração do cluster
 ```
 
-## 🔧 Configuração
+## Funcionalidades
 
-1. Instale as dependências:
-```bash
-pip install -r requirements.txt
-```
+1. **Scraping de Produtos**
+   - Extração automatizada de produtos do Magazine Luiza
+   - Tratamento robusto de preços e nomes
+   - Geração de IDs únicos
 
-2. Para ambiente Databricks:
-- Execute o notebook `00_setup_cluster.py` para configurar o cluster
-- O notebook instala apenas as bibliotecas necessárias que não estão presentes no cluster
+2. **Processamento de Dados**
+   - Limpeza e normalização de preços
+   - Processamento de texto com NLTK
+   - Geração de embeddings com SentenceTransformer
 
-## 💻 Uso
+3. **Análise de Similaridade**
+   - Cálculo de similaridade cosseno
+   - Identificação de pares de produtos similares
+   - Classificação de níveis de similaridade
 
-### Versão Local
-```python
-from benchmarking_improved import BenchmarkingProcessor, TextProcessor, SimilarityProcessor, PriceProcessor
+4. **Geração de Relatórios**
+   - Exportação para DBFS
+   - Geração de relatórios HTML
+   - Criação de TempViews para consultas
 
-# Inicialize os processadores
-text_processor = TextProcessor()
-similarity_processor = SimilarityProcessor()
-price_processor = PriceProcessor()
-benchmarking_processor = BenchmarkingProcessor(
-    text_processor, 
-    similarity_processor, 
-    price_processor
-)
+## Requisitos
 
-# Processe os dados
-df_final = benchmarking_processor.process_data(df_magalu, df_bemol)
-```
+- Python 3.8+
+- Databricks Runtime 10.4+
+- Bibliotecas listadas em `requirements.txt`
 
-### Versão Databricks
-```python
-# Execute o notebook benchmarking_databricks.py
-# Os resultados serão salvos como:
-# 1. TempView: tempview_benchmarking_pares
-# 2. Arquivo Parquet: /dbfs/mnt/datalake/silver/benchmarking/benchmarking_results.parquet
-```
+## Instalação
 
-## 📊 Classificação de Similaridade
+1. Clone o repositório
+2. Instale as dependências:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- **Exclusivo**: score = -1
-- **Muito Similar**: score >= 0.85
-- **Moderadamente Similar**: score >= 0.5
-- **Pouco Similar**: score < 0.5
+## Uso
 
-## 💰 Processamento de Preços
+1. Configure o cluster Databricks usando o notebook `00_setup_cluster.py`
+2. Execute o pipeline principal:
+   ```python
+   from benchmarking_databricks_unified import main
+   main()
+   ```
 
-- Suporte para múltiplos formatos:
-  - Formato brasileiro: 5.886,00
-  - Formatos mistos: R$ 5.886,00 ou 5.886,00
-  - Formatos simples: 5886,00
-- Limpeza automática de caracteres especiais
-- Conversão para float
+## Configuração
 
-## 🔍 Cálculo de Diferença Percentual
+O código utiliza as seguintes configurações padrão:
+- Threshold de similaridade: 0.7
+- Número máximo de páginas para scraping: 5
+- Modelo de embeddings: 'all-MiniLM-L6-v2'
 
-- Calculado apenas para pares com similaridade >= 0.90
-- Fórmula: |p1 - p2| / ((p1 + p2) / 2) * 100
-- Resultado formatado com 2 casas decimais
+## Logs e Monitoramento
 
-## 📈 Melhorias Recentes
+- Logs são gerados em tempo real
+- Erros são capturados e registrados
+- Métricas de performance são monitoradas
 
-1. **Processamento de Preços**:
-   - Regex mais preciso para formato brasileiro
-   - Limpeza básica como fallback
-   - Melhor tratamento de erros
+## Contribuição
 
-2. **Classificação de Similaridade**:
-   - Novos thresholds: 0.85 e 0.5
-   - Categorias mais descritivas
-   - Melhor separação dos níveis
-
-3. **Processamento de Dados**:
-   - Cálculo de similaridade em batch
-   - Uso de `itertuples` para melhor performance
-   - Remoção de processamento redundante
-
-4. **Estrutura do Código**:
-   - Injeção de dependências nos processadores
-   - Métodos mais focados e coesos
-   - Melhor organização do fluxo
-
-5. **Melhorias de Performance**:
-   - Cálculo de similaridade otimizado
-   - Processamento em batch quando possível
-   - Redução de operações redundantes
-
-6. **Salvamento de Dados**:
-   - TempView para consultas SQL
-   - Parquet para armazenamento permanente
-   - Melhor organização dos arquivos
-
-## 🤝 Contribuição
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
 5. Abra um Pull Request
 
-## 📝 Licença
+## Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Este projeto está licenciado sob a MIT License - veja o arquivo LICENSE para detalhes.
