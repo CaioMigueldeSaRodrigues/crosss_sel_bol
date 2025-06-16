@@ -9,31 +9,23 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Instalação de Bibliotecas
+# MAGIC ## Instalação de Bibliotecas Essenciais
 # MAGIC 
-# MAGIC Instalando apenas as bibliotecas necessárias que não estão presentes no cluster.
+# MAGIC Instalando e garantindo as versões compatíveis para as bibliotecas chave.
 
 # COMMAND ----------
 
-# Verifica e instala sentence-transformers se necessário
-try:
-    import sentence_transformers
-    print(f"sentence-transformers já instalado: v{sentence_transformers.__version__}")
-except ImportError:
-    print("Instalando sentence-transformers...")
-    %pip install sentence-transformers==2.2.2
-    dbutils.library.restartPython()
+# Força a reinstalação de huggingface_hub para garantir compatibilidade
+# %%capture
+%pip install --force-reinstall huggingface_hub==0.10.0
 
-# COMMAND ----------
+# Força a reinstalação de sentence-transformers com a versão compatível
+# %%capture
+%pip install --force-reinstall sentence-transformers==2.2.2
 
-# Verifica e instala NLTK se necessário
-try:
-    import nltk
-    print(f"NLTK já instalado: v{nltk.__version__}")
-except ImportError:
-    print("Instalando NLTK...")
-    %pip install nltk==3.8.1
-    dbutils.library.restartPython()
+# Instala NLTK
+# %%capture
+%pip install nltk==3.8.1
 
 # COMMAND ----------
 
@@ -69,11 +61,13 @@ import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import nltk
+import huggingface_hub
 
 print(f"PySpark: v{pyspark.__version__}")
 print(f"Pandas: v{pd.__version__}")
 print(f"NumPy: v{np.__version__}")
-print(f"SentenceTransformer: v{sentence_transformers.__version__}")
+print(f"huggingface_hub: v{huggingface_hub.__version__}")
+print(f"SentenceTransformer: v{SentenceTransformer.__version__}")
 print(f"NLTK: v{nltk.__version__}")
 
 # COMMAND ----------
