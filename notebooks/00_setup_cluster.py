@@ -123,11 +123,15 @@ logger.info("Setup do ambiente concluído com sucesso!")
 
 # COMMAND ----------
 
-# Verificar configurações do Spark
-spark_conf = spark.sparkContext.getConf().getAll()
-print("\nConfigurações do Spark:")
-for conf in spark_conf:
-    print(f"{conf[0]}: {conf[1]}")
+# As configurações do Spark são gerenciadas pelo Databricks em clusters compartilhados
+# O acesso direto a spark.sparkContext.getConf().getAll() não é suportado no modo de usuário isolado.
+# As configurações já fornecidas no JSON são suficientes para entender a configuração do cluster.
+# Se desejar verificar configurações específicas via código, use spark.conf.get('spark.property.name')
+# ou utilize a interface do Databricks para inspecionar as configurações do cluster.
+# spark_conf = spark.sparkContext.getConf().getAll()
+# print("\nConfigurações do Spark:")
+# for conf in spark_conf:
+#     print(f"{conf[0]}: {conf[1]}")
 
 # COMMAND ----------
 
