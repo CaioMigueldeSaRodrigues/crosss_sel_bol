@@ -13,34 +13,40 @@ logger = logging.getLogger(__name__)
 
 def limpar_preco(preco):
     """
-    Limpa e converte um preço para float.
+    Limpa e padroniza um preço.
     
     Args:
-        preco: Valor do preço a ser limpo (string, float ou outro tipo)
+        preco: Preço a ser limpo (string ou float)
         
     Returns:
-        float: Preço limpo e convertido, ou 0.0 se não for possível converter
+        float: Preço limpo ou None se inválido
     """
     if preco is None:
-        return 0.0
+        return None
         
     try:
-        preco_str = str(preco)
-        # Remove caracteres especiais e espaços
-        preco_str = preco_str.replace('\xa0', ' ').replace('R$', '').replace('ou', '').strip()
-        
-        # Tenta encontrar um padrão de preço brasileiro (ex: 1.234,56)
-        match = re.search(r'(\d{1,3}(?:\.\d{3})*,\d{2})', preco_str)
-        if match:
-            preco_str = match.group(1).replace('.', '').replace(',', '.')
-            return float(preco_str)
+        # Se já for float, retorna como está
+        if isinstance(preco, float):
+            return preco
             
-        # Se não encontrar o padrão, tenta converter diretamente
-        preco_str = preco_str.replace('.', '').replace(',', '.')
+        # Converte para string e remove espaços
+        preco_str = str(preco).strip()
+        
+        # Remove "ou R$" e qualquer espaço em branco
+        preco_str = preco_str.replace('ou R$', '').strip()
+        
+        # Remove pontos de milhar
+        preco_str = preco_str.replace('.', '')
+        
+        # Substitui vírgula por ponto
+        preco_str = preco_str.replace(',', '.')
+        
+        # Converte para float
         return float(preco_str)
-    except (ValueError, TypeError, AttributeError) as e:
-        logger.warning(f"Erro ao converter preço '{preco}': {str(e)}")
-        return 0.0
+        
+    except (ValueError, AttributeError) as e:
+        logger.warning(f"Não foi possível converter o preço '{preco}' para float. Erro: {str(e)}")
+        return None
 
 # Registra a função como UDF do Spark
 limpar_preco_udf = udf(limpar_preco, DoubleType())

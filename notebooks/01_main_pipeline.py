@@ -97,10 +97,10 @@ try:
     
     # 5. Geração de embeddings
     print("Iniciando geração de embeddings")
-    df_magalu = generate_dataframe_embeddings(df_magalu, column_name="title", batch_size=PROCESSING_CONFIG['batch_size'])
+    df_magalu = generate_dataframe_embeddings(df_magalu, column_name="title")
     df_magalu = df_magalu.withColumnRenamed("embedding", "magalu_embedding")
     
-    df_bemol = generate_dataframe_embeddings(df_bemol, column_name="title", batch_size=PROCESSING_CONFIG['batch_size'])
+    df_bemol = generate_dataframe_embeddings(df_bemol, column_name="title")
     df_bemol = df_bemol.withColumnRenamed("embedding", "bemol_embedding")
     
     # 6. Análise de similaridade e pareamento
