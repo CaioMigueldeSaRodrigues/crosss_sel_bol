@@ -42,7 +42,8 @@ try:
     print("Iniciando scraping Magazine Luiza")
     print(f"DEBUG: Tipo de SCRAPING_CONFIG['magalu']['categories']: {type(SCRAPING_CONFIG['magalu']['categories'])}")
     print(f"DEBUG: Conteúdo de SCRAPING_CONFIG['magalu']['categories']: {SCRAPING_CONFIG['magalu']['categories']}")
-    df_magalu = scrape_magalu(spark=spark, categorias_a_raspar=SCRAPING_CONFIG['magalu']['categories'], paginas=17)
+    categorias = ["Eletroportateis", "Informatica", "Tv e Video", "Moveis", "Eletrodomesticos", "Celulares"]
+    df_magalu = scrape_magalu(spark=spark, categorias_a_raspar=categorias, paginas=17)
     df_magalu = df_magalu.withColumn("source", lit("magalu")) \
                         .withColumn("extraction_date", current_timestamp())
     
