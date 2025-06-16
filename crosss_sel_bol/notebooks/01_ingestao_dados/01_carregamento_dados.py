@@ -1,7 +1,7 @@
 # Databricks notebook source
 # COMMAND ----------
 
-# MAGIC %run "../../config/config"
+# MAGIC %run "../../config/config.py"
 
 # COMMAND ----------
 
@@ -33,16 +33,19 @@ spark = SparkSession.builder \
 # COMMAND ----------
 
 # Carregar dados de produtos
+# As colunas foram ajustadas com base nos nomes exatos da tabela 'bol.produtos_site' fornecidos na imagem.
+# Note que 'data_atualizacao' não foi encontrada nas informações fornecidas e pode precisar de ajuste ou de outra fonte.
 produtos_df = spark.sql("""
-    SELECT 
-        id,
-        nome,
-        categoria,
-        preco,
-        promocao,
-        data_atualizacao
-    FROM bol.produtos
-    WHERE data_atualizacao >= current_date() - 30
+    SELECT
+        MATERIAL AS id,
+        DESCRICAO_MATERIAL AS nome, -- Coluna 'nome' mapeada para DESCRICAO_MATERIAL
+        CATEGORIA AS categoria,
+        PRECO AS preco,
+        PRECO_PROM AS promocao,
+        QUANTIDADE_ESTOQUE AS quantidade_estoque
+    FROM bol.produtos_site
+    WHERE QUANTIDADE_ESTOQUE > 4
+    AND CENTRO = 102
 """)
 
 # COMMAND ----------
@@ -53,15 +56,18 @@ produtos_df = spark.sql("""
 # COMMAND ----------
 
 # Carregar dados de transações
+# As colunas e junções foram ajustadas com base nos nomes reais e relações fornecidas.
 transacoes_df = spark.sql("""
-    SELECT 
-        pedido_id,
-        produto_id,
-        quantidade,
-        valor_total,
-        data_pedido
-    FROM bol.faturamento_centros_bol
-    WHERE data_pedido >= current_date() - 90
+    SELECT
+        f.PEDIDO AS pedido_id,
+        cv.antecedent AS produto_id,
+        f.QTD_ITEM AS quantidade, -- Coluna 'quantidade' mapeada para QTD_ITEM
+        f.VALOR_LIQUIDO AS valor_total,
+        f.DT_FATURAMENTO AS data_pedido
+    FROM bol.faturamento_centros_bol f
+    JOIN hive_metastore.mawe_gold.cross_varejo cv
+        ON f.PEDIDO = cv.PEDIDO
+    WHERE f.DT_FATURAMENTO >= current_date() - 90
 """)
 
 # COMMAND ----------
