@@ -4,8 +4,26 @@ import time
 import logging
 import pandas as pd
 from datetime import datetime
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType # Importar tipos Spark
 
-def extrair_produtos(base_url_template, categoria_nome, paginas=2):
+# Define categorias e URLs (manter para mapeamento)
+CATEGORIAS_MAP = {
+    "Eletroportateis": "https://www.magazineluiza.com.br/eletroportateis/l/ep/?page={}",
+    "Informatica": "https://www.magazineluiza.com.br/informatica/l/in/?page={}",
+    "Tv e Video": "https://www.magazineluiza.com.br/tv-e-video/l/et/?page={}",
+    "Moveis": "https://www.magazineluiza.com.br/moveis/l/mo/?page={}",
+    "Eletrodomesticos": "https://www.magazineluiza.com.br/eletrodomesticos/l/ed/?page={}",
+    "Celulares": "https://www.magazineluiza.com.br/celulares-e-smartphones/l/te/?page={}"
+}
+
+# Configuração de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def extrair_produtos(base_url_template, categoria_nome, paginas=17): # Ajustado paginas para 17
     produtos = []
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -34,7 +52,9 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=2):
                     price = None
                     if price_str:
                         try:
-                            price = float(price_str.replace('R$', '').replace('.', '').replace(',', '.').strip())
+                            # Ajuste para lidar com preços como R$ 1.234,56
+                            price_clean = price_str.replace('R$', '').replace('.', '').replace(',', '.').strip()
+                            price = float(price_clean)
                         except ValueError:
                             logging.warning(f"[{categoria_nome}] Não foi possível converter o preço '{price_str}' para float.")
 
@@ -60,52 +80,54 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=2):
 
     return produtos
 
-def scrape_magalu(categorias_a_raspar=None, paginas=2):
+def scrape_magalu(spark: SparkSession, categorias_a_raspar=None, paginas=17): # Adicionado spark como argumento, e paginas=17 como default
     """
-    Realiza o scraping de produtos do Magazine Luiza.
+    Realiza o scraping de produtos do Magazine Luiza e retorna um Spark DataFrame.
     
     Args:
+        spark (SparkSession): Sessão Spark ativa.
         categorias_a_raspar (list, optional): Uma lista de nomes de categorias a serem raspadas.
                                               Se None, raspa um conjunto padrão de categorias.
                                               Ex: ["Eletroportateis", "Celulares"]
-        paginas (int): Número de páginas para extrair por categoria. Default é 2.
+        paginas (int): Número de páginas para extrair por categoria. Default é 17.
         
     Returns:
-        pd.DataFrame: DataFrame com os produtos raspados.
+        pyspark.sql.DataFrame: DataFrame Spark com os produtos raspados.
     """
-    categorias_map = {
-        "Eletroportateis": "https://www.magazineluiza.com.br/eletroportateis/l/ep/?page={}",
-        "Informatica": "https://www.magazineluiza.com.br/informatica/l/in/?page={}",
-        "Tv e Video": "https://www.magazineluiza.com.br/tv-e-video/l/et/?page={}",
-        "Moveis": "https://www.magazineluiza.com.br/moveis/l/mo/?page={}",
-        "Eletrodomesticos": "https://www.magazineluiza.com.br/eletrodomesticos/l/ed/?page={}",
-        "Celulares": "https://www.magazineluiza.com.br/celulares-e-smartphones/l/te/?page={}"
-    }
-
     final_products_list = []
     
     if categorias_a_raspar is None:
-        categorias_para_iterar = categorias_map.items()
+        categorias_para_iterar = CATEGORIAS_MAP.items()
     else:
         categorias_para_iterar = []
         for cat_name in categorias_a_raspar:
-            if cat_name in categorias_map:
-                categorias_para_iterar.append((cat_name, categorias_map[cat_name]))
+            if cat_name in CATEGORIAS_MAP:
+                categorias_para_iterar.append((cat_name, CATEGORIAS_MAP[cat_name]))
             else:
                 logging.warning(f"Categoria '{cat_name}' não encontrada no mapeamento. Ignorando.")
 
     for categoria_nome, url_template in categorias_para_iterar:
         logging.info(f"Iniciando coleta de produtos da categoria: {categoria_nome}")
+        # Usar paginas do argumento da função scrape_magalu
         produtos_da_categoria = extrair_produtos(url_template, categoria_nome, paginas)
         final_products_list.extend(produtos_da_categoria)
         logging.info(f"Coletados {len(produtos_da_categoria)} produtos da categoria {categoria_nome}")
 
-    df_final = pd.DataFrame(final_products_list)
-    if not df_final.empty:
-        expected_columns = ['title', 'price', 'url', 'source', 'extraction_date']
-        for col in expected_columns:
-            if col not in df_final.columns:
-                df_final[col] = None
+    df_pandas = pd.DataFrame(final_products_list)
+    if df_pandas.empty:
+        logging.warning("Nenhum produto coletado para o Magazine Luiza.")
+        return spark.createDataFrame([], schema=StructType([])) # Retorna um DataFrame Spark vazio com schema vazio
 
-    logging.info(f"Total de produtos coletados do Magazine Luiza: {len(df_final)}")
-    return df_final 
+    # Define o schema para o Spark DataFrame
+    schema = StructType([
+        StructField("title", StringType(), True),
+        StructField("price", StringType(), True),
+        StructField("url", StringType(), True),
+        StructField("source", StringType(), True),
+        StructField("extraction_date", StringType(), True) # Pode ser TimestampType se o formato isoformat for compatível
+    ])
+
+    spark_df_final = spark.createDataFrame(df_pandas, schema=schema)
+
+    logging.info(f"Total de produtos coletados do Magazine Luiza: {spark_df_final.count()} e convertidos para Spark DataFrame.")
+    return spark_df_final 

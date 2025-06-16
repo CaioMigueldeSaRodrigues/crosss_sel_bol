@@ -8,19 +8,6 @@ sys.path.append(os.path.abspath('../src'))
 
 # COMMAND ----------
 
-# Configurar Spark Session
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder \
-    .appName("Scraping Benchmarking") \
-    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-    .config("spark.databricks.delta.optimizeWrite.enabled", "true") \
-    .config("spark.databricks.delta.autoCompact.enabled", "true") \
-    .getOrCreate()
-
-# COMMAND ----------
-
 # Importar módulos
 from config import *
 from scraping.magalu import scrape_magalu
@@ -53,7 +40,7 @@ def save_to_delta(df, table_name, mode="overwrite"):
 try:
     # 2. Scraping Magalu
     print("Iniciando scraping Magazine Luiza")
-    df_magalu = scrape_magalu(SCRAPING_CONFIG['magalu']['categories'], paginas=17, spark=spark)
+    df_magalu = scrape_magalu(spark, SCRAPING_CONFIG['magalu']['categories'], paginas=17)
     df_magalu = df_magalu.withColumn("source", lit("magalu")) \
                         .withColumn("extraction_date", current_timestamp())
     
