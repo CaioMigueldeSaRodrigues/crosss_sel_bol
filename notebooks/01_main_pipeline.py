@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath('../src'))
 
 # Importar módulos
 from config import *
-from scraping.magalu import scrape_magalu
+from src.scraping.magalu import scrape_magalu as magalu_scraper
 from scraping.bemol import scrape_bemol
 from processing.cleaning import clean_dataframe_prices
 from processing.embeddings import generate_dataframe_embeddings
@@ -42,8 +42,10 @@ try:
     print("Iniciando scraping Magazine Luiza")
     print(f"DEBUG: Tipo de SCRAPING_CONFIG['magalu']['categories']: {type(SCRAPING_CONFIG['magalu']['categories'])}")
     print(f"DEBUG: Conteúdo de SCRAPING_CONFIG['magalu']['categories']: {SCRAPING_CONFIG['magalu']['categories']}")
+    print(f"DEBUG: Função scrape_magalu: {magalu_scraper.__name__}")
+    print(f"DEBUG: Módulo da função: {magalu_scraper.__module__}")
     categorias = ["Eletroportateis", "Informatica", "Tv e Video", "Moveis", "Eletrodomesticos", "Celulares"]
-    df_magalu = scrape_magalu(spark=spark, categorias_a_raspar=categorias, paginas=17)
+    df_magalu = magalu_scraper(spark=spark, categorias_a_raspar=categorias, paginas=17)
     df_magalu = df_magalu.withColumn("source", lit("magalu")) \
                         .withColumn("extraction_date", current_timestamp())
     
