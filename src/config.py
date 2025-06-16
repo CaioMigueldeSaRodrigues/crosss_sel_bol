@@ -2,10 +2,22 @@
 
 import os
 from datetime import datetime
+from typing import Dict, List, Optional
+from dotenv import load_dotenv
+
+# Carrega variáveis de ambiente do arquivo .env
+load_dotenv()
+
+def get_env_var(name: str, default: Optional[str] = None) -> str:
+    """Obtém variável de ambiente com validação."""
+    value = os.getenv(name, default)
+    if value is None:
+        raise ValueError(f"Variável de ambiente {name} não encontrada")
+    return value
 
 # Configurações do Databricks
-DATABRICKS_WORKSPACE = "https://dbc-dp-1234567890123456.cloud.databricks.com"
-DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
+DATABRICKS_WORKSPACE = get_env_var("DATABRICKS_WORKSPACE")
+DATABRICKS_TOKEN = get_env_var("DATABRICKS_TOKEN")
 
 # Configurações do DBFS
 DBFS_BASE_PATH = "/FileStore/tables"
@@ -22,24 +34,23 @@ MAGALU_PROCESSED_TABLE = f"{CATALOG_NAME}.processed_magalu_products"
 PRODUCT_MATCHES_TABLE = f"{CATALOG_NAME}.product_matches"
 
 # Configurações de Processamento
-SIMILARITY_THRESHOLD = 0.7
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-BATCH_SIZE = 256
+PROCESSING_CONFIG = {
+    "embedding_model": "all-MiniLM-L6-v2",
+    "similarity_threshold": 0.7,
+    "batch_size": 1000
+}
 
 # Configurações de Email
 EMAIL_CONFIG = {
     "enabled": True,
-    "api_key": os.getenv("SENDGRID_API_KEY"),
-    "from_email": "seu-email@bemol.com.br",
-    "to_emails": [
-        "destinatario1@bemol.com.br",
-        "destinatario2@bemol.com.br"
-    ],
+    "api_key": get_env_var("SENDGRID_API_KEY"),
+    "from_email": get_env_var("EMAIL_FROM"),
+    "to_emails": get_env_var("EMAIL_TO").split(","),
     "subject": f"Relatório de Produtos - {datetime.now().strftime('%d/%m/%Y')}"
 }
 
 # Configurações de Logging
-LOG_CONFIG = {
+LOGGING_CONFIG = {
     "level": "INFO",
     "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     "file": f"{DBFS_LOGS_PATH}/pipeline_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
@@ -54,15 +65,6 @@ SCRAPING_CONFIG = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         },
         "timeout": 30,
-        "max_retries": 3
-    },
-    "bemol": {
-        "base_url": "https://www.bemol.com.br",
-        "search_url": "https://www.bemol.com.br/busca/{query}",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        },
-        "timeout": 30,
         "max_retries": 3,
         "categories": [
             "Eletroportateis",
@@ -72,6 +74,15 @@ SCRAPING_CONFIG = {
             "Eletrodomesticos",
             "Celulares"
         ]
+    },
+    "bemol": {
+        "base_url": "https://www.bemol.com.br",
+        "search_url": "https://www.bemol.com.br/busca/{query}",
+        "headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        },
+        "timeout": 30,
+        "max_retries": 3
     }
 }
 
@@ -91,29 +102,15 @@ EXPORT_CONFIG = {
     }
 }
 
-# Configurações de processamento
-PROCESSING_CONFIG = {
-    "embedding_model": "all-MiniLM-L6-v2",
-    "similarity_threshold": 0.7,
-    "batch_size": 1000
-}
-
 # Configurações de armazenamento
 STORAGE_CONFIG = {
-    "raw_path": "/dbfs/FileStore/tables/raw",
-    "processed_path": "/dbfs/FileStore/tables/processed",
-    "exports_path": "/dbfs/FileStore/tables/exports",
+    "raw_path": DBFS_RAW_PATH,
+    "processed_path": DBFS_PROCESSED_PATH,
+    "exports_path": DBFS_EXPORTS_PATH,
     "delta_tables": {
-        "bemol": "bol.feed_varejo_vtex",
-        "magalu_raw": "bol.raw_magalu_products",
-        "magalu_processed": "bol.processed_magalu_products",
-        "matches": "bol.product_matches"
+        "bemol": SOURCE_TABLE,
+        "magalu_raw": MAGALU_RAW_TABLE,
+        "magalu_processed": MAGALU_PROCESSED_TABLE,
+        "matches": PRODUCT_MATCHES_TABLE
     }
-}
-
-# Configurações de logging
-LOGGING_CONFIG = {
-    "level": "INFO",
-    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    "file": "/dbfs/FileStore/logs/scraping.log"
 }

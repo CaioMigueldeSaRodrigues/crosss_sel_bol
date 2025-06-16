@@ -1,7 +1,15 @@
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
 import pandas as pd
-from config import EMAIL_CONFIG
+import logging
+from src.config import EMAIL_CONFIG, LOGGING_CONFIG
+
+# Configuração de logging
+logging.basicConfig(
+    level=getattr(logging, LOGGING_CONFIG["level"]),
+    format=LOGGING_CONFIG["format"]
+)
+logger = logging.getLogger(__name__)
 
 def send_email(subject, html_content):
     """
@@ -13,12 +21,31 @@ def send_email(subject, html_content):
         
     Returns:
         bool: True se o email foi enviado com sucesso, False caso contrário
+        
+    Raises:
+        ValueError: Se o assunto ou conteúdo forem vazios
+        ValueError: Se as configurações de email estiverem inválidas
     """
+    if not subject or not subject.strip():
+        raise ValueError("Assunto do email não pode ser vazio")
+        
+    if not html_content or not html_content.strip():
+        raise ValueError("Conteúdo do email não pode ser vazio")
+        
+    if not EMAIL_CONFIG['enabled']:
+        logger.info("Envio de email desabilitado nas configurações")
+        return False
+        
+    if not EMAIL_CONFIG['api_key']:
+        raise ValueError("API key do SendGrid não configurada")
+        
+    if not EMAIL_CONFIG['from_email']:
+        raise ValueError("Email de origem não configurado")
+        
+    if not EMAIL_CONFIG['to_emails']:
+        raise ValueError("Lista de destinatários vazia")
+        
     try:
-        if not EMAIL_CONFIG['enabled']:
-            print("Envio de email desabilitado nas configurações")
-            return False
-            
         # Cria cliente SendGrid
         sg = SendGridAPIClient(EMAIL_CONFIG['api_key'])
         
@@ -34,12 +61,12 @@ def send_email(subject, html_content):
         response = sg.send(message)
         
         if response.status_code == 202:
-            print("Email enviado com sucesso!")
+            logger.info("Email enviado com sucesso!")
             return True
         else:
-            print(f"Erro ao enviar email. Status code: {response.status_code}")
+            logger.error(f"Erro ao enviar email. Status code: {response.status_code}")
             return False
             
     except Exception as e:
-        print(f"Erro ao enviar email: {str(e)}")
+        logger.error(f"Erro ao enviar email: {str(e)}")
         return False 

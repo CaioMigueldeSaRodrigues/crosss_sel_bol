@@ -5,7 +5,17 @@ import logging
 import pandas as pd
 from datetime import datetime
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType # Importar tipos Spark
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+from src.config import SCRAPING_CONFIG, LOGGING_CONFIG
+
+# Configuração de logging
+logging.basicConfig(
+    level=getattr(logging, LOGGING_CONFIG["level"]),
+    format=LOGGING_CONFIG["format"]
+)
+logger = logging.getLogger(__name__)
 
 # Define categorias e URLs (manter para mapeamento)
 CATEGORIAS_MAP = {
@@ -17,30 +27,41 @@ CATEGORIAS_MAP = {
     "Celulares": "https://www.magazineluiza.com.br/celulares-e-smartphones/l/te/?page={}"
 }
 
-# Configuração de logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+def create_session():
+    """Cria uma sessão HTTP com retry mechanism."""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=SCRAPING_CONFIG["magalu"]["max_retries"],
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
-def extrair_produtos(base_url_template, categoria_nome, paginas=17): # Ajustado paginas para 17
+def extrair_produtos(base_url_template, categoria_nome, paginas=17):
     produtos = []
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
+    session = create_session()
+    headers = SCRAPING_CONFIG["magalu"]["headers"]
 
     for pagina in range(1, paginas + 1):
-        logging.info(f"[{categoria_nome}] Página {pagina} - Extraindo dados...")
+        logger.info(f"[{categoria_nome}] Página {pagina} - Extraindo dados...")
         url = base_url_template.format(pagina)
         try:
-            response = requests.get(url, headers=headers)
+            response = session.get(
+                url, 
+                headers=headers,
+                timeout=SCRAPING_CONFIG["magalu"]["timeout"]
+            )
             response.raise_for_status()
             soup = BeautifulSoup(response.content, 'html.parser')
 
             cards = soup.select('div[data-testid="product-card-content"]')
             
             if not cards:
-                logging.warning(f"[{categoria_nome}] Nenhuns cartões de produto encontrados na página {pagina}. A URL pode estar incorreta ou a estrutura HTML mudou. URL: {url}")
+                logger.warning(f"[{categoria_nome}] Nenhuns cartões de produto encontrados na página {pagina}. A URL pode estar incorreta ou a estrutura HTML mudou. URL: {url}")
+                continue
 
             for card in cards:
                 try:
@@ -56,7 +77,7 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17): # Ajustado 
                             price_clean = price_str.replace('R$', '').replace('.', '').replace(',', '.').strip()
                             price = float(price_clean)
                         except ValueError:
-                            logging.warning(f"[{categoria_nome}] Não foi possível converter o preço '{price_str}' para float.")
+                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{price_str}' para float.")
 
                     link_element = card.find_parent('a')
                     product_relative_url = link_element['href'] if link_element else ""
@@ -67,20 +88,22 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17): # Ajustado 
                         'price': price,
                         'url': product_url,
                         'source': 'magalu',
-                        'extraction_date': datetime.now().isoformat()
+                        'extraction_date': datetime.now()
                     })
                 except Exception as e:
-                    logging.error(f"[{categoria_nome}] Erro ao extrair dados de um produto na página {pagina}: {e}")
+                    logger.error(f"[{categoria_nome}] Erro ao extrair dados de um produto na página {pagina}: {e}")
                     continue
             
-        except requests.exceptions.RequestException as e:
-            logging.error(f"[{categoria_nome}] Erro ao acessar a página {pagina}: {e}. URL: {url}")
+            # Rate limiting
+            time.sleep(1)
             
-        time.sleep(1)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"[{categoria_nome}] Erro ao acessar a página {pagina}: {e}. URL: {url}")
+            continue
 
     return produtos
 
-def scrape_magalu(spark: SparkSession, categorias_a_raspar=None, paginas=17): # Corrigindo a assinatura para incluir SparkSession
+def scrape_magalu(spark: SparkSession, categorias_a_raspar=None, paginas=17):
     """
     Realiza o scraping de produtos do Magazine Luiza e retorna um Spark DataFrame.
     
@@ -104,30 +127,28 @@ def scrape_magalu(spark: SparkSession, categorias_a_raspar=None, paginas=17): # 
             if cat_name in CATEGORIAS_MAP:
                 categorias_para_iterar.append((cat_name, CATEGORIAS_MAP[cat_name]))
             else:
-                logging.warning(f"Categoria '{cat_name}' não encontrada no mapeamento. Ignorando.")
+                logger.warning(f"Categoria '{cat_name}' não encontrada no mapeamento. Ignorando.")
 
     for categoria_nome, url_template in categorias_para_iterar:
-        logging.info(f"Iniciando coleta de produtos da categoria: {categoria_nome}")
-        # Usar paginas do argumento da função scrape_magalu
+        logger.info(f"Iniciando coleta de produtos da categoria: {categoria_nome}")
         produtos_da_categoria = extrair_produtos(url_template, categoria_nome, paginas)
         final_products_list.extend(produtos_da_categoria)
-        logging.info(f"Coletados {len(produtos_da_categoria)} produtos da categoria {categoria_nome}")
+        logger.info(f"Coletados {len(produtos_da_categoria)} produtos da categoria {categoria_nome}")
 
     df_pandas = pd.DataFrame(final_products_list)
     if df_pandas.empty:
-        logging.warning("Nenhum produto coletado para o Magazine Luiza.")
-        return spark.createDataFrame([], schema=StructType([])) # Retorna um DataFrame Spark vazio com schema vazio
+        logger.warning("Nenhum produto coletado para o Magazine Luiza.")
+        return spark.createDataFrame([], schema=StructType([]))
 
     # Define o schema para o Spark DataFrame
     schema = StructType([
         StructField("title", StringType(), True),
-        StructField("price", StringType(), True),
+        StructField("price", DoubleType(), True),
         StructField("url", StringType(), True),
         StructField("source", StringType(), True),
-        StructField("extraction_date", StringType(), True) # Pode ser TimestampType se o formato isoformat for compatível
+        StructField("extraction_date", TimestampType(), True)
     ])
 
     spark_df_final = spark.createDataFrame(df_pandas, schema=schema)
-
-    logging.info(f"Total de produtos coletados do Magazine Luiza: {spark_df_final.count()} e convertidos para Spark DataFrame.")
+    logger.info(f"Total de produtos coletados do Magazine Luiza: {spark_df_final.count()} e convertidos para Spark DataFrame.")
     return spark_df_final 
