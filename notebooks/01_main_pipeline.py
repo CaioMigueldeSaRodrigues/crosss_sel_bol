@@ -45,9 +45,22 @@ try:
     print(f"DEBUG: Função scrape_magalu: {magalu_scraper.__name__}")
     print(f"DEBUG: Módulo da função: {magalu_scraper.__module__}")
     categorias = ["Eletroportateis", "Informatica", "Tv e Video", "Moveis", "Eletrodomesticos", "Celulares"]
+    
+    # Debug: Mostrar alguns preços antes do scraping
+    print("\nDEBUG: Iniciando scraping com categorias:", categorias)
+    
     df_magalu = magalu_scraper(spark=spark, categorias_a_raspar=categorias, paginas=17)
+    
+    # Debug: Mostrar alguns preços após o scraping
+    print("\nDEBUG: Amostra de preços após scraping:")
+    df_magalu.select("title", "price").show(5, truncate=False)
+    
     df_magalu = df_magalu.withColumn("source", lit("magalu")) \
                         .withColumn("extraction_date", current_timestamp())
+    
+    # Debug: Mostrar alguns preços após adicionar colunas
+    print("\nDEBUG: Amostra de preços após adicionar colunas:")
+    df_magalu.select("title", "price").show(5, truncate=False)
     
     # Salva dados brutos
     table_name = save_to_delta(df_magalu, "raw_magalu_products")
@@ -64,8 +77,15 @@ try:
     print(f"Dados da Bemol salvos em: {table_name}")
     
     # 4. Limpeza de preços
-    print("Iniciando limpeza de preços")
+    print("\nDEBUG: Iniciando limpeza de preços")
+    print("DEBUG: Amostra de preços antes da limpeza:")
+    df_magalu.select("title", "price").show(5, truncate=False)
+    
     df_magalu = clean_dataframe_prices(df_magalu)
+    
+    print("\nDEBUG: Amostra de preços após limpeza:")
+    df_magalu.select("title", "price").show(5, truncate=False)
+    
     df_bemol = clean_dataframe_prices(df_bemol)
     
     # Salva dados processados

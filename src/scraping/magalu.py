@@ -72,18 +72,35 @@ def extrair_produtos(base_url_template, categoria_nome, paginas=17):
                     preco_element = card.find('p', {'data-testid': 'price-value'})
                     if preco_element:
                         preco_texto = preco_element.text.strip()
-                        # Remove "ou R$" e qualquer espaço em branco no início
-                        preco_texto = preco_texto.replace('ou R$', '').strip()
-                        # Remove o símbolo da moeda e espaços
-                        preco_texto = preco_texto.replace('R$', '').strip()
+                        logger.info(f"[{categoria_nome}] Preço original: '{preco_texto}'")
+                        
+                        # Limpeza mais agressiva
+                        preco_texto = preco_texto.lower()  # Converte para minúsculo
+                        preco_texto = preco_texto.replace('ou r$', '')  # Remove 'ou r$'
+                        preco_texto = preco_texto.replace('r$', '')  # Remove 'r$'
+                        preco_texto = preco_texto.replace('ou', '')  # Remove 'ou' sozinho
+                        preco_texto = preco_texto.strip()  # Remove espaços
+                        
                         # Remove pontos de milhar e substitui vírgula por ponto
                         preco_texto = preco_texto.replace('.', '').replace(',', '.')
+                        
+                        logger.info(f"[{categoria_nome}] Preço após limpeza: '{preco_texto}'")
+                        
                         try:
-                            preco = float(preco_texto)
+                            # Tenta extrair apenas números e ponto
+                            import re
+                            numeros = re.findall(r'\d+\.?\d*', preco_texto)
+                            if numeros:
+                                preco = float(numeros[0])
+                                logger.info(f"[{categoria_nome}] Preço convertido com sucesso: {preco}")
+                            else:
+                                logger.warning(f"[{categoria_nome}] Nenhum número encontrado no preço: '{preco_texto}'")
+                                preco = None
                         except ValueError as e:
-                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{preco_texto}' para float.")
+                            logger.warning(f"[{categoria_nome}] Não foi possível converter o preço '{preco_texto}' para float. Erro: {str(e)}")
                             preco = None
                     else:
+                        logger.warning(f"[{categoria_nome}] Elemento de preço não encontrado")
                         preco = None
 
                     link_element = card.find_parent('a')
