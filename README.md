@@ -65,8 +65,10 @@ This project implements a product recommendation system running on Databricks, c
 ## Usage
 
 1. **Data Ingestion**
-   - Run the data ingestion notebooks to load and preprocess data
-   - Ensure all required tables are available
+   - Execute os notebooks de ingestão de dados para carregar e pré-processar os dados.
+   - **Atualização:** Foram feitos ajustes na forma como os dados de produtos e transações são carregados, incluindo mapeamento de colunas e filtros para garantir a consistência e relevância dos dados (ex: produtos com estoque > 4, transações dos últimos 90 dias).
+   - **Novo:** Inclusão do carregamento de dados promocionais do OneDrive, utilizando o `DataProcessor` para padronizar e mesclar as informações.
+   - Certifique-se de que todas as tabelas e fontes de dados necessárias estejam acessíveis.
 
 2. **Recommendation Generation**
    - Execute the recommendation notebooks
@@ -91,3 +93,5 @@ This project is proprietary and confidential.
 ## Contact
 
 For questions and support, please contact the development team.
+
+Este é um teste de atualização do README.
