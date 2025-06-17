@@ -2,8 +2,10 @@
 # COMMAND ----------
 
 import sys
-sys.path.append("../../config")
-import config
+import os
+# Adiciona a raiz do projeto ao sys.path
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '../..')))
+from config import config
 
 # COMMAND ----------
 

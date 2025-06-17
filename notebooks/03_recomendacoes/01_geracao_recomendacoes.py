@@ -21,8 +21,10 @@ from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
 from pyspark.ml import Pipeline
 from src.models.recommender import ProductRecommender
 import sys
-sys.path.append("../../config")
-import config
+import os
+# Adiciona a raiz do projeto ao sys.path
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '../..')))
+from config import config
 
 # COMMAND ----------
 
