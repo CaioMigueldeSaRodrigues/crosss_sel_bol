@@ -43,25 +43,6 @@ def validate_dataframe(df: pd.DataFrame, required_columns: List[str]) -> bool:
     """
     return all(col in df.columns for col in required_columns)
 
-def format_product_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Formata os dados do produto para o padrão do sistema
-    
-    Args:
-        data: Dicionário com dados do produto
-        
-    Returns:
-        Dicionário formatado
-    """
-    return {
-        'id': str(data.get('id', '')),
-        'nome': str(data.get('nome', '')).strip(),
-        'categoria': str(data.get('categoria', '')).strip(),
-        'preco': float(data.get('preco', 0.0)),
-        'promocao': bool(data.get('promocao', False)),
-        'data_atualizacao': datetime.now().isoformat()
-    }
-
 def calculate_similarity_score(item1: Dict[str, Any], item2: Dict[str, Any]) -> float:
     """
     Calcula o score de similaridade entre dois produtos
