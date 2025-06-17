@@ -1,90 +1,78 @@
 # Product Recommendation System - Databricks
 
-This project implements a product recommendation system running on Databricks, combining multiple recommendation strategies:
-- Cross-selling recommendations based on purchase patterns
-- Similar product recommendations within the same category
-- Promotional product recommendations
+Este projeto implementa um sistema de recomendação de produtos rodando no Databricks, combinando múltiplas estratégias de recomendação:
+- Recomendações de cross-selling baseadas em padrões de compra
+- Recomendações de produtos similares dentro da mesma categoria
+- Recomendações de produtos promocionais (baseadas nos dados existentes na tabela de produtos)
 
 ## Project Structure
 
 ```
 ├── notebooks/                    # Databricks notebooks
-│   ├── 01_data_ingestion/       # Data loading and preprocessing
-│   ├── 02_feature_engineering/  # Feature creation and transformation
-│   └── 03_recommendations/      # Recommendation generation
-├── src/                         # Source code
-│   ├── data/                    # Data processing modules
-│   ├── models/                  # Recommendation models
-│   └── utils/                   # Utility functions
-├── sql/                         # SQL queries
-│   ├── cross_selling/          # Cross-selling related queries
-│   └── promotions/             # Promotional product queries
-└── config/                      # Configuration files
+│   ├── 01_data_ingestion/       # Carregamento e pré-processamento dos dados brutos
+│   ├── 02_feature_engineering/  # Criação e transformação de features
+│   └── 03_recommendations/      # Geração das recomendações
+├── src/                         # Código-fonte
+│   ├── data/                    # Módulos de processamento de dados
+│   ├── models/                  # Modelos de recomendação
+│   └── utils/                   # Funções utilitárias e de logging
+├── sql/                         # Consultas SQL (se aplicável, para o futuro)
+└── config/                      # Arquivos de configuração
 ```
 
 ## Features
 
-1. **Cross-Selling Recommendations**
-   - Analyzes purchase patterns to identify products frequently bought together
-   - Uses association rules mining to generate recommendations
+1.  **Cross-Selling Recommendations**
+    *   Analisa padrões de compra para identificar produtos frequentemente comprados juntos.
+    *   Utiliza regras de associação (provenientes da tabela `hive_metastore.mawe_gold.cross_regras_varejo`) para gerar recomendações.
 
-2. **Similar Product Recommendations**
-   - Recommends products from the same category
-   - Considers product attributes and customer preferences
+2.  **Similar Product Recommendations**
+    *   Recomenda produtos da mesma categoria.
+    *   Considera atributos do produto e pode ser expandido para preferências do cliente.
 
-3. **Promotional Recommendations**
-   - Integrates with promotional data from Excel sheets
-   - Recommends products currently on promotion
+3.  **Promotional Recommendations**
+    *   Recomenda produtos que estão em promoção, utilizando as informações de preço promocional (`PRECO_PROM`) disponíveis na tabela `bol.produtos_site`.
 
 ## Technical Stack
 
-- **Platform**: Databricks
-- **Languages**: 
-  - Python
-  - PySpark
-  - SQL
-- **Data Sources**:
-  - Databricks Tables
-  - Excel Files (Promotions)
-  - OneDrive Integration
+-   **Platform**: Databricks
+-   **Languages**:
+    *   Python
+    *   PySpark
+    *   SQL
+-   **Data Sources**:
+    *   Databricks Table: `bol.produtos_site` (informações de catálogo de produtos)
+    *   Databricks Table: `bol.faturamento_centros_bol` (dados de transações e vendas)
+    *   Databricks Table: `hive_metastore.mawe_gold.cross_regras_varejo` (regras de associação para cross-selling)
 
 ## Setup and Configuration
 
-1. **Databricks Environment**
-   - Ensure you have access to the required Databricks workspace
-   - Configure necessary permissions for OneDrive access
+1.  **Databricks Environment**
+    *   Certifique-se de ter acesso ao workspace Databricks necessário.
+    *   Configure as permissões de acesso às tabelas `bol.produtos_site`, `bol.faturamento_centros_bol` e `hive_metastore.mawe_gold.cross_regras_varejo`.
 
-2. **Dependencies**
-   - Install required Python packages
-   - Configure Databricks libraries
-
-3. **Data Access**
-   - Set up connections to required data sources
-   - Configure authentication for OneDrive access
+2.  **Dependencies**
+    *   Instale os pacotes Python necessários (ver `requirements.txt`).
+    *   Configure as bibliotecas Databricks conforme a necessidade.
 
 ## Usage
 
-1. **Data Ingestion**
-   - Execute os notebooks de ingestão de dados para carregar e pré-processar os dados.
-   - **Atualização:** Foram feitos ajustes na forma como os dados de produtos e transações são carregados, incluindo mapeamento de colunas e filtros para garantir a consistência e relevância dos dados (ex: produtos com estoque > 4, transações dos últimos 90 dias).
-   - **Novo:** Inclusão do carregamento de dados promocionais do OneDrive, utilizando o `DataProcessor` para padronizar e mesclar as informações.
-   - Certifique-se de que todas as tabelas e fontes de dados necessárias estejam acessíveis.
+1.  **Data Ingestion**
+    *   Execute o notebook de ingestão de dados (`notebooks/01_data_ingestion/01_carregamento_dados.py`) para carregar e pré-processar os dados das tabelas `bol.produtos_site` e `bol.faturamento_centros_bol`.
+    *   Este passo garante a consistência e relevância dos dados, aplicando filtros como estoque mínimo e transações recentes.
+    *   Certifique-se de que todas as tabelas e fontes de dados necessárias no Databricks estejam acessíveis.
 
-2. **Recommendation Generation**
-   - Execute the recommendation notebooks
-   - Monitor the results in the Databricks dashboard
-
-3. **Promotional Updates**
-   - Update promotional data in the Excel sheet
-   - Run the promotional recommendation process
+2.  **Recommendation Generation**
+    *   Execute os notebooks subsequentes de engenharia de features e geração de recomendações para construir e aplicar os modelos.
+    *   Monitore os resultados no dashboard do Databricks ou ferramenta de BI conectada.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+1.  Fork the repository
+2.  Create a feature branch
+3.  Commit your changes
+4.  Push to the branch
+5.  Create a Pull Request
 
 ## License
 
@@ -92,6 +80,4 @@ This project is proprietary and confidential.
 
 ## Contact
 
-For questions and support, please contact the development team.
-
-Este é um teste de atualização do README.
+Para dúvidas e suporte, por favor, entre em contato com a equipe de desenvolvimento.
