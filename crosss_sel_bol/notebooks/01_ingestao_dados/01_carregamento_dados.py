@@ -50,10 +50,13 @@ try:
             CATEGORIA AS categoria,
             PRECO AS preco,
             PRECO_PROM AS promocao,
-            QUANTIDADE_ESTOQUE AS quantidade_estoque
+            QUANTIDADE_ESTOQUE AS quantidade_estoque,
+            GRUPO_MERCADORIA
         FROM bol.produtos_site
         WHERE QUANTIDADE_ESTOQUE > 4
         AND CENTRO = 102
+        AND CATEGORIA = 'VAREJO'
+        AND GRUPO_MERCADORIA IS NOT NULL
     """).cache()
     
     # Validar dados de produtos
@@ -83,8 +86,8 @@ try:
             MATERIAL AS produto_id,
             QTD_ITEM AS quantidade,
             VALOR_LIQUIDO AS valor_total,
-            DT_FATURAMENTO AS data_pedido,
-            CLI AS cliente_id -- Adicionado campo CLI como cliente_id
+            DT_FATURAMENTO,
+            CLI AS cliente_id
         FROM bol.faturamento_centros_bol
         WHERE DT_FATURAMENTO >= current_date() - 90
     """).cache()
@@ -114,18 +117,13 @@ try:
     processor = DataProcessor()
     
     # Processar dados de produtos e transações.
-    # Nota: A integração de dados promocionais e regras de associação (cross_regras_varejo)
-    # será tratada em notebooks subsequentes (ex: Engenharia de Features ou Recomendações).
+    # Nota: A integração com regras de associação (cross_regras_varejo)
+    # será tratada em notebooks subsequentes (ex: Engenharia de Features ou Geração de Recomendações).
     with spark.sparkContext.setJobGroup("processamento_dados", "Processamento de dados brutos para recomendação"):
         produtos_processados = processor.process_product_data(produtos_df.toPandas())
         transacoes_processadas = processor.process_transaction_data(transacoes_df.toPandas())
         
-        # A mesclagem com dados promocionais não ocorre nesta etapa,
-        # pois a fonte original (OneDrive Excel) não está entre as 3 tabelas base.
-        # Ajustar a variável final para refletir apenas dados de produtos processados ou
-        # definir um novo esquema de mesclagem se a informação promocional
-        # for incorporada em bol.produtos_site ou bol.faturamento_centros_bol em outra etapa.
-        # Por enquanto, 'dados_finais' conterá apenas os produtos processados.
+        # 'dados_finais' conterá apenas os produtos processados, pois dados promocionais não são mesclados nesta etapa.
         dados_finais = produtos_processados # Assumindo que produtos_processados é a base para a próxima etapa.
     
 except Exception as e:
@@ -167,7 +165,6 @@ except Exception as e:
 try:
     # Verificar quantidade de produtos processados
     total_produtos = dados_finais_spark.count()
-    # A verificação de "Produtos em promoção" foi removida, pois dados promocionais não são mesclados aqui.
     categorias_unicas = dados_finais_spark.select('categoria').distinct().count()
     
     logger.info(f"""
@@ -190,7 +187,6 @@ except Exception as e:
 # Liberar cache dos DataFrames originais
 produtos_df.unpersist()
 transacoes_df.unpersist()
-# promocoes_df.unpersist() # Removido, pois dados promocionais não são carregados aqui.
 
 # COMMAND ----------
 

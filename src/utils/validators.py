@@ -50,7 +50,7 @@ class DataValidator:
             ])
             
             # Verificar datas inválidas
-            invalid_dates = df.filter(col('data_pedido').isNull()).count()
+            invalid_dates = df.filter(col('DT_FATURAMENTO').isNull()).count()
             
             return {
                 'null_counts': null_counts.collect()[0].asDict(),

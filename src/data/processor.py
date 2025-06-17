@@ -20,7 +20,7 @@ class DataProcessor:
             'promocao', 'quantidade_estoque' # Removido 'data_atualizacao' que não está explícito na bol.produtos_site
         ]
         self.required_transaction_columns = [
-            'pedido_id', 'produto_id', 'quantidade', 'valor_total', 'data_pedido', 'cliente_id'
+            'pedido_id', 'produto_id', 'quantidade', 'valor_total', 'DT_FATURAMENTO', 'cliente_id'
         ]
         
     def process_product_data(self, df: pd.DataFrame) -> pd.DataFrame:
