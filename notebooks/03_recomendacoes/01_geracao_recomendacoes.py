@@ -20,6 +20,9 @@ from pyspark.sql.functions import col, when, lit, count, sum, avg, desc
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
 from pyspark.ml import Pipeline
 from src.models.recommender import ProductRecommender
+import sys
+sys.path.append("../../config")
+import config
 
 # COMMAND ----------
 
