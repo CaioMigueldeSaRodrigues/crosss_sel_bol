@@ -37,7 +37,7 @@ VALIDATION_CONFIG = {
         'min_stock': 0
     },
     'transacoes': {
-        'required_columns': ['pedido_id', 'produto_id', 'quantidade', 'valor_total', 'data_pedido', 'cliente_id'],
+        'required_columns': ['pedido_id', 'produto_id', 'quantidade', 'valor_total', 'DT_FATURAMENTO', 'cliente_id'],
         'numeric_columns': ['quantidade', 'valor_total'],
         'min_quantity': 0,
         'min_value': 0

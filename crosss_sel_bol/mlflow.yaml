@@ -1,3 +1,0 @@
-backend_store_uri: databricks
-default_artifact_root: dbfs:/mlflow
-registry_uri: databricks 
