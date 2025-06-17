@@ -20,9 +20,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb
 # Databricks
 .metabricks/
 .metabricksignore
@@ -39,10 +36,6 @@ env/
 *.swp
 *.swo
 
-# Databricks
-.databricks/
-.dbfs/
-
 # Logs
 logs/
 *.log
@@ -54,9 +47,4 @@ logs/
 
 # OS
 .DS_Store
-Thumbs.db
-
-# Project specific
-*.xlsx
-*.csv
-data/
+Thumbs.db 

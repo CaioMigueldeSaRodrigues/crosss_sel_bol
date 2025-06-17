@@ -1,93 +1,97 @@
-# Sistema de Recomendação de Produtos - Databricks
+# Product Recommendation System - Databricks
 
-Este projeto implementa um sistema de recomendação de produtos rodando no Databricks, combinando múltiplas estratégias de recomendação:
-- Recomendações de cross-selling baseadas em padrões de compra
-- Recomendações de produtos similares dentro da mesma categoria
-- Recomendações de produtos em promoção
+This project implements a product recommendation system running on Databricks, combining multiple recommendation strategies:
+- Cross-selling recommendations based on purchase patterns
+- Similar product recommendations within the same category
+- Promotional product recommendations
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
-├── notebooks/                    # Notebooks do Databricks
-│   ├── 01_ingestao_dados/       # Carregamento e pré-processamento de dados
-│   ├── 02_engenharia_features/  # Criação e transformação de features
-│   └── 03_recomendacoes/        # Geração de recomendações
-├── src/                         # Código fonte
-│   ├── data/                    # Módulos de processamento de dados
-│   ├── models/                  # Modelos de recomendação
-│   └── utils/                   # Funções utilitárias
-├── sql/                         # Consultas SQL
-│   ├── cross_selling/          # Consultas relacionadas a cross-selling
-│   └── promocoes/              # Consultas de produtos promocionais
-└── config/                      # Arquivos de configuração
+├── notebooks/                    # Databricks notebooks
+│   ├── 01_data_ingestion/       # Data loading and preprocessing
+│   ├── 02_feature_engineering/  # Feature creation and transformation
+│   └── 03_recommendations/      # Recommendation generation
+├── src/                         # Source code
+│   ├── data/                    # Data processing modules
+│   ├── models/                  # Recommendation models
+│   └── utils/                   # Utility functions
+├── sql/                         # SQL queries
+│   ├── cross_selling/          # Cross-selling related queries
+│   └── promotions/             # Promotional product queries
+└── config/                      # Configuration files
 ```
 
-## Funcionalidades
+## Features
 
-1. **Recomendações de Cross-Selling**
-   - Analisa padrões de compra para identificar produtos frequentemente comprados juntos
-   - Utiliza mineração de regras de associação para gerar recomendações
+1. **Cross-Selling Recommendations**
+   - Analyzes purchase patterns to identify products frequently bought together
+   - Uses association rules mining to generate recommendations
 
-2. **Recomendações de Produtos Similares**
-   - Recomenda produtos da mesma categoria
-   - Considera atributos do produto e preferências do cliente
+2. **Similar Product Recommendations**
+   - Recommends products from the same category
+   - Considers product attributes and customer preferences
 
-3. **Recomendações Promocionais**
-   - Integra com dados promocionais de planilhas Excel
-   - Recomenda produtos atualmente em promoção
+3. **Promotional Recommendations**
+   - Integrates with promotional data from Excel sheets
+   - Recommends products currently on promotion
 
-## Stack Tecnológico
+## Technical Stack
 
-- **Plataforma**: Databricks
-- **Linguagens**: 
+- **Platform**: Databricks
+- **Languages**: 
   - Python
   - PySpark
   - SQL
-- **Fontes de Dados**:
-  - Tabelas do Databricks
-  - Arquivos Excel (Promoções)
-  - Integração com OneDrive
+- **Data Sources**:
+  - Databricks Tables
+  - Excel Files (Promotions)
+  - OneDrive Integration
 
-## Configuração e Setup
+## Setup and Configuration
 
-1. **Ambiente Databricks**
-   - Garantir acesso ao workspace do Databricks necessário
-   - Configurar permissões necessárias para acesso ao OneDrive
+1. **Databricks Environment**
+   - Ensure you have access to the required Databricks workspace
+   - Configure necessary permissions for OneDrive access
 
-2. **Dependências**
-   - Instalar pacotes Python necessários
-   - Configurar bibliotecas do Databricks
+2. **Dependencies**
+   - Install required Python packages
+   - Configure Databricks libraries
 
-3. **Acesso a Dados**
-   - Configurar conexões com as fontes de dados necessárias
-   - Configurar autenticação para acesso ao OneDrive
+3. **Data Access**
+   - Set up connections to required data sources
+   - Configure authentication for OneDrive access
 
-## Uso
+## Usage
 
-1. **Ingestão de Dados**
-   - Executar os notebooks de ingestão para carregar e pré-processar dados
-   - Garantir que todas as tabelas necessárias estejam disponíveis
+1. **Data Ingestion**
+   - Execute os notebooks de ingestão de dados para carregar e pré-processar os dados.
+   - **Atualização:** Foram feitos ajustes na forma como os dados de produtos e transações são carregados, incluindo mapeamento de colunas e filtros para garantir a consistência e relevância dos dados (ex: produtos com estoque > 4, transações dos últimos 90 dias).
+   - **Novo:** Inclusão do carregamento de dados promocionais do OneDrive, utilizando o `DataProcessor` para padronizar e mesclar as informações.
+   - Certifique-se de que todas as tabelas e fontes de dados necessárias estejam acessíveis.
 
-2. **Geração de Recomendações**
-   - Executar os notebooks de recomendação
-   - Monitorar os resultados no dashboard do Databricks
+2. **Recommendation Generation**
+   - Execute the recommendation notebooks
+   - Monitor the results in the Databricks dashboard
 
-3. **Atualizações Promocionais**
-   - Atualizar dados promocionais na planilha Excel
-   - Executar o processo de recomendação promocional
+3. **Promotional Updates**
+   - Update promotional data in the Excel sheet
+   - Run the promotional recommendation process
 
-## Contribuição
+## Contributing
 
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature
-3. Faça commit das suas alterações
-4. Push para a branch
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-## Licença
+## License
 
-Este projeto é proprietário e confidencial.
+This project is proprietary and confidential.
 
-## Contato
+## Contact
 
-Para dúvidas e suporte, entre em contato com a equipe de desenvolvimento. 
+For questions and support, please contact the development team.
+
+Este é um teste de atualização do README.
