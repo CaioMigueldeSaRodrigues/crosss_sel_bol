@@ -1,6 +1,12 @@
 # Databricks notebook source
 # COMMAND ----------
 
+import sys
+sys.path.append("../../config")
+import config
+
+# COMMAND ----------
+
 # MAGIC %run "../../config/config"
 
 # COMMAND ----------
