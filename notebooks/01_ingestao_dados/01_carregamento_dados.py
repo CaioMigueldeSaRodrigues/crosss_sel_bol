@@ -3,9 +3,10 @@
 
 import sys
 import os
-# Adiciona a raiz do projeto ao sys.path
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '../..')))
+# Adicione o caminho absoluto do seu Databricks Repos abaixo
+sys.path.append('/Workspace/Repos/caio.rodrigues@bemol.com.br/crosss_sel_bol')
 from config import config
+from src.data.processor import DataProcessor
 
 # COMMAND ----------
 
@@ -82,7 +83,6 @@ transacoes_df = spark.sql("""
 # COMMAND ----------
 
 # Carregar dados promocionais do OneDrive
-from src.data.processor import DataProcessor
 
 # Configurar acesso ao OneDrive
 access_token = dbutils.secrets.get(scope="onedrive", key="access_token")

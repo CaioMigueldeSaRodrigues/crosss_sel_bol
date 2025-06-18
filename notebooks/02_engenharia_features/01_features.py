@@ -2,9 +2,8 @@
 # COMMAND ----------
 
 import sys
-import os
-# Adiciona a raiz do projeto ao sys.path
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '../..')))
+# Adicione o caminho absoluto do seu Databricks Repos abaixo
+sys.path.append('/Workspace/Repos/caio.rodrigues@bemol.com.br/crosss_sel_bol')
 from config import config
 from src.data.processor import DataProcessor
 import pandas as pd
