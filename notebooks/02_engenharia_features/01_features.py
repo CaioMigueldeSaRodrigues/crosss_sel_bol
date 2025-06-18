@@ -6,6 +6,13 @@ import os
 # Adiciona a raiz do projeto ao sys.path
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '../..')))
 from config import config
+from src.data.processor import DataProcessor
+import pandas as pd
+import numpy as np
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, when, lit, count, sum, avg, desc
+from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
+from pyspark.ml import Pipeline
 
 # COMMAND ----------
 
@@ -17,16 +24,6 @@ from config import config
 # MAGIC # Engenharia de Features
 # MAGIC 
 # MAGIC Este notebook realiza a criação e transformação de features para o sistema de recomendação.
-
-# COMMAND ----------
-
-# Importação de bibliotecas
-import pandas as pd
-import numpy as np
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, lit, count, sum, avg, desc
-from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
-from pyspark.ml import Pipeline
 
 # COMMAND ----------
 
@@ -44,7 +41,7 @@ spark = SparkSession.builder \
 
 # Carregar dados processados
 produtos_df = spark.table("bol.produtos_processados")
-transacoes_df = spark.table("bol.faturamento_centros_bol")
+transacoes_df = spark.table("bol.transacoes_processadas")
 
 # COMMAND ----------
 

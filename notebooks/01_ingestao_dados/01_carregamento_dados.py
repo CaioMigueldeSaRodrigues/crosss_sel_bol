@@ -48,8 +48,9 @@ produtos_df = spark.sql("""
         categoria,
         preco,
         promocao,
+        quantidade_estoque,
         data_atualizacao
-    FROM bol.produtos
+    FROM bol.produtos_site
     WHERE data_atualizacao >= current_date() - 30
 """)
 
@@ -67,9 +68,10 @@ transacoes_df = spark.sql("""
         produto_id,
         quantidade,
         valor_total,
-        data_pedido
+        DT_FATURAMENTO,
+        cliente_id
     FROM bol.faturamento_centros_bol
-    WHERE data_pedido >= current_date() - 90
+    WHERE DT_FATURAMENTO >= current_date() - 90
 """)
 
 # COMMAND ----------
@@ -103,8 +105,11 @@ promocoes_df = spark.read.format("com.crealytics.spark.excel") \
 processor = DataProcessor()
 
 # Processar dados
-produtos_processados = processor.process_product_data(produtos_df.toPandas())
-transacoes_processadas = processor.process_transaction_data(transacoes_df.toPandas())
+produtos_pd = produtos_df.toPandas()
+transacoes_pd = transacoes_df.toPandas()
+
+produtos_processados = processor.process_product_data(produtos_pd)
+transacoes_processadas = processor.process_transaction_data(transacoes_pd)
 promocoes_processadas = processor.process_promotional_data(promocoes_df.toPandas())
 
 # Mesclar dados
@@ -151,3 +156,18 @@ print(f"Categorias únicas: {dados_finais_spark.select('categoria').distinct().c
 # MAGIC Principais outputs:
 # MAGIC - Tabela `bol.produtos_processados` com dados de produtos e promoções
 # MAGIC - Lista de transações processadas para geração de regras de associação 
+
+# COMMAND ----------
+
+# (Opcional) Salvar resultados processados em Delta Lake
+produtos_spark = spark.createDataFrame(produtos_processados)
+produtos_spark.write.mode("overwrite").format("delta").saveAsTable("bol.produtos_processados")
+
+transacoes_spark = spark.createDataFrame(transacoes_processadas)
+transacoes_spark.write.mode("overwrite").format("delta").saveAsTable("bol.transacoes_processadas")
+
+# COMMAND ----------
+
+# Chamar subnotebooks (exemplo: engenharia de features, recomendações)
+# %run ../02_engenharia_features/01_features
+# %run ../03_recomendacoes/01_geracao_recomendacoes 

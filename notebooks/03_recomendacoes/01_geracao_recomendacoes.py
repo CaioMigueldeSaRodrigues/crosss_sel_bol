@@ -42,7 +42,7 @@ spark = SparkSession.builder \
 
 # Carregar dados
 produtos_df = spark.table("bol.produtos_features")
-transacoes_df = spark.table("bol.faturamento_centros_bol")
+transacoes_df = spark.table("bol.transacoes_processadas")
 
 # COMMAND ----------
 
