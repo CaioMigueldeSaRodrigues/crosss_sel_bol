@@ -76,7 +76,7 @@ Este projeto implementa um sistema de recomendação de produtos rodando no Data
 
 ## License
 
-This project is proprietary and confidential.
+This project is proprietary and Bol.
 
 ## Contact
 
