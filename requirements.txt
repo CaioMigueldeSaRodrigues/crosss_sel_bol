@@ -18,3 +18,4 @@ rich
 unidecode>=1.2.0
 matplotlib>=3.4.3
 seaborn>=0.11.2
+PyYAML
