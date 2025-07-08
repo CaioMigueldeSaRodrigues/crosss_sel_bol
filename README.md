@@ -80,4 +80,5 @@ This project is proprietary and Bol.
 
 ## Contact
 
-Para dúvidas e suporte, por favor, entre em contato com a equipe de desenvolvimento.
+Para dúvidas e suporte, por favor, entre em contato com a equipe de dados da Bol.
+
