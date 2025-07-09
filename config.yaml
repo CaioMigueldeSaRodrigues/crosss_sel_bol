@@ -2,6 +2,7 @@
 tabelas:
   faturamento: bol.faturamento_centros_bol
   produtos: bol.produtos_site
+  clientes: bol.tb_dados_clientes # Tabela de clientes atualizada
 
 # Parâmetros para o modelo de IA (FP-Growth)
 modelo_ia:
@@ -14,6 +15,10 @@ filtros:
   qtde_minima: 3
   categoria: "VAREJO"
 
-# Caminho para salvar o relatório final no DBFS
-caminho_saida: /mnt/datalake/silver/benchmarking/basket_analysis_report 
-caminho_saida_kpi: /mnt/datalake/gold/kpi_power_bi/market_basket_analysis 
+# Caminhos para salvar os produtos finais no DBFS
+caminhos_saida:
+  regras_associacao: /mnt/datalake/gold/recomendacoes/regras_associacao_puras
+  lista_marketing: /mnt/datalake/gold/recomendacoes/lista_marketing_emails
+  kpis_power_bi: /mnt/datalake/gold/recomendacoes/kpis_compra_casada
+  kpis_geograficos: /mnt/datalake/gold/recomendacoes/kpis_por_bairro # Novo
+  kpis_temporais: /mnt/datalake/gold/recomendacoes/kpis_por_mes      # Novo 
