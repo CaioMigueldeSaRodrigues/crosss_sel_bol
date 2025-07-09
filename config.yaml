@@ -1,28 +1,14 @@
-# Configurações do projeto: caminhos de dados e parâmetros gerais
+tabelas:
+  faturamento: bol.faturamento_centros_bol
+  produtos: bol.produtos_site
 
-# Diretório base dos dados (pode ser alterado para DBFS, S3, etc.)
-data_dir: data
+modelo_ia:
+  min_support: 0.001
+  min_confidence: 0.05
 
-# Caminhos dos arquivos de dados
-olist_clientes_path: "${data_dir}/olist_customers_dataset.csv"
-olist_pedidos_path: "${data_dir}/olist_orders_dataset.csv"
-olist_produtos_path: "${data_dir}/olist_products_dataset.csv"
-olist_itens_pedidos_path: "${data_dir}/olist_order_items_dataset.csv"
-olist_pagamentos_path: "${data_dir}/olist_order_payments_dataset.csv"
-olist_reviews_path: "${data_dir}/olist_order_reviews_dataset.csv"
-olist_sellers_path: "${data_dir}/olist_sellers_dataset.csv"
-olist_geolocation_path: "${data_dir}/olist_geolocation_dataset.csv"
+filtros:
+  centro: 102
+  qtde_minima: 3
+  categoria: "VAREJO"
 
-# Exemplo de parâmetro para ambiente
-ambiente: local  # ou "databricks", "producao", etc.
-
-# Caminhos para os arquivos de dados
-data_paths:
-  customers: 'data/olist_customers_dataset.csv'
-  orders: 'data/olist_orders_dataset.csv'
-  # Adicione os outros arquivos aqui
-
-# Parâmetros do modelo (exemplo)
-model_params:
-  test_size: 0.2
-  random_state: 42 
+caminho_saida: /mnt/datalake/silver/benchmarking/basket_analysis_report 
