@@ -1,84 +1,68 @@
-# Product Recommendation System - Databricks
+# Product Recommendation System
 
-Este projeto implementa um sistema de recomendação de produtos rodando no Databricks, combinando múltiplas estratégias de recomendação:
-- Recomendações de cross-selling baseadas em padrões de compra
-- Recomendações de produtos similares dentro da mesma categoria
-- Recomendações de produtos promocionais (baseadas nos dados existentes na tabela de produtos)
+Este projeto implementa um sistema de recomendação de produtos, com foco em cross-selling, produtos similares e promoções.
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
-├── notebooks/                    # Databricks notebooks
-│   ├── 01_data_ingestion/       # Carregamento e pré-processamento dos dados brutos
-│   ├── 02_feature_engineering/  # Criação e transformação de features
-│   └── 03_recommendations/      # Geração das recomendações
-├── src/                         # Código-fonte
-│   ├── data/                    # Módulos de processamento de dados
-│   ├── models/                  # Modelos de recomendação
-│   └── utils/                   # Funções utilitárias e de logging
-├── sql/                         # Consultas SQL (se aplicável, para o futuro)
-└── config/                      # Arquivos de configuração
+├── run_pipeline.py               # Orquestrador principal do pipeline de dados e modelo
+├── src/                         # Código-fonte (processamento, modelos, utilitários)
+│   ├── data_processing.py
+│   ├── model_training.py
+│   └── ...
+├── config.yaml                   # Configuração de caminhos e parâmetros
+├── requirements.txt              # Dependências Python
+└── data/                        # Dados de entrada (definidos em config.yaml)
 ```
 
-## Features
+## Como Executar
 
-1.  **Cross-Selling Recommendations**
-    *   Analisa padrões de compra para identificar produtos frequentemente comprados juntos.
-    *   Utiliza regras de associação (provenientes da tabela `hive_metastore.mawe_gold.cross_regras_varejo`) para gerar recomendações.
+1. **Instale as dependências:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2.  **Similar Product Recommendations**
-    *   Recomenda produtos da mesma categoria.
-    *   Considera atributos do produto e pode ser expandido para preferências do cliente.
+2. **Configure os caminhos dos dados em `config.yaml`:**
+   - Exemplo:
+     ```yaml
+     data_paths:
+       customers: data/customers.csv
+       orders: data/orders.csv
+     model_params:
+       test_size: 0.2
+       random_state: 42
+     ```
 
-3.  **Promotional Recommendations**
-    *   Recomenda produtos que estão em promoção, utilizando as informações de preço promocional (`PRECO_PROM`) disponíveis na tabela `bol.produtos_site`.
+3. **Execute o pipeline:**
+   ```bash
+   python run_pipeline.py
+   ```
 
-## Technical Stack
+   O script irá:
+   - Carregar configurações e dados.
+   - Realizar pré-processamento.
+   - Treinar o modelo de classificação.
+   - Logar resultados no MLflow.
 
--   **Platform**: Databricks
--   **Languages**:
-    *   Python
-    *   PySpark
-    *   SQL
--   **Data Sources**:
-    *   Databricks Table: `bol.produtos_site` (informações de catálogo de produtos)
-    *   Databricks Table: `bol.faturamento_centros_bol` (dados de transações e vendas)
-    *   Databricks Table: `hive_metastore.mawe_gold.cross_regras_varejo` (regras de associação para cross-selling)
+## Principais Funcionalidades
 
-## Setup and Configuration
+- **Cross-Selling:** Identifica clientes com potencial para novas compras.
+- **Pré-processamento robusto:** Limpeza e preparação dos dados.
+- **Treinamento automatizado:** Pipeline de machine learning integrado ao MLflow.
 
-1.  **Databricks Environment**
-    *   Certifique-se de ter acesso ao workspace Databricks necessário.
-    *   Configure as permissões de acesso às tabelas `bol.produtos_site`, `bol.faturamento_centros_bol` e `hive_metastore.mawe_gold.cross_regras_varejo`.
+## Contribuição
 
-2.  **Dependencies**
-    *   Instale os pacotes Python necessários (ver `requirements.txt`).
-    *   Configure as bibliotecas Databricks conforme a necessidade.
+1. Fork o repositório
+2. Crie uma branch de feature
+3. Commit suas alterações
+4. Push para a branch
+5. Abra um Pull Request
 
-## Usage
+## Licença
 
-1.  **Data Ingestion**
-    *   Execute o notebook de ingestão de dados (`notebooks/01_data_ingestion/01_carregamento_dados.py`) para carregar e pré-processar os dados das tabelas `bol.produtos_site` e `bol.faturamento_centros_bol`.
-    *   Este passo garante a consistência e relevância dos dados, aplicando filtros como estoque mínimo e transações recentes.
-    *   Certifique-se de que todas as tabelas e fontes de dados necessárias no Databricks estejam acessíveis.
+Este projeto é proprietário e confidencial.
 
-2.  **Recommendation Generation**
-    *   Execute os notebooks subsequentes de engenharia de features e geração de recomendações para construir e aplicar os modelos.
-    *   Monitore os resultados no dashboard do Databricks ou ferramenta de BI conectada.
-
-## Contributing
-
-1.  Fork the repository
-2.  Create a feature branch
-3.  Commit your changes
-4.  Push to the branch
-5.  Create a Pull Request
-
-## License
-
-This project is proprietary and Bol.
-
-## Contact
+## Contato
 
 Para dúvidas e suporte, por favor, entre em contato com a equipe de dados da Bol.
 
