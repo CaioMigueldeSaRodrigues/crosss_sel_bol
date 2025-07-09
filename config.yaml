@@ -1,14 +1,18 @@
+# Nomes das tabelas no Hive Metastore
 tabelas:
   faturamento: bol.faturamento_centros_bol
   produtos: bol.produtos_site
 
+# Parâmetros para o modelo de IA (FP-Growth)
 modelo_ia:
   min_support: 0.001
   min_confidence: 0.05
 
+# Parâmetros de filtro de negócio
 filtros:
   centro: 102
   qtde_minima: 3
   categoria: "VAREJO"
 
+# Caminho para salvar o relatório final no DBFS
 caminho_saida: /mnt/datalake/silver/benchmarking/basket_analysis_report 
