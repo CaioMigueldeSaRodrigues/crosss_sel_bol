@@ -2,7 +2,16 @@
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    # Tenta adicionar o diretório do arquivo atual (funciona em .py)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    # Se __file__ não existir (ex: notebook), usa o diretório atual do processo
+    base_dir = os.getcwd()
+
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
 
 import yaml
 import pandas as pd
@@ -10,7 +19,7 @@ import mlflow
 from src.data_processing import preprocessar_dados_cliente
 from src.model_training import train_classification_model
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = base_dir
 
 def configurar_mlflow():
     """
