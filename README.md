@@ -2,6 +2,11 @@
 
 Este projeto implementa um sistema de recomendação de produtos, com foco em cross-selling, produtos similares e promoções.
 
+## Requisitos de Ambiente
+
+- **Python:** 3.8.10 (veja também o arquivo `runtime.txt`)
+- **Dependências:** As versões das principais bibliotecas estão fixadas em `requirements.txt` para garantir reprodutibilidade.
+
 ## Estrutura do Projeto
 
 ```
@@ -12,6 +17,7 @@ Este projeto implementa um sistema de recomendação de produtos, com foco em cr
 │   └── ...
 ├── config.yaml                   # Configuração de caminhos e parâmetros
 ├── requirements.txt              # Dependências Python
+├── runtime.txt                   # Versão recomendada do Python
 └── data/                        # Dados de entrada (definidos em config.yaml)
 ```
 
@@ -65,4 +71,29 @@ Este projeto é proprietário e confidencial.
 ## Contato
 
 Para dúvidas e suporte, por favor, entre em contato com a equipe de dados da Bol.
+
+## Testes Automatizados
+
+Para rodar os testes automatizados, execute:
+
+```bash
+pytest tests/
+```
+
+Certifique-se de que todas as dependências estejam instaladas antes de rodar os testes.
+
+## MLflow: Rastreamento de Experimentos
+
+O pipeline utiliza o MLflow para rastreamento de experimentos de machine learning.
+
+- **No Databricks:** O MLflow já está integrado e não requer configuração adicional.
+- **Localmente:** O código faz fallback automático para tracking local em `./mlruns`. Para visualizar os experimentos, execute:
+
+```bash
+mlflow ui --backend-store-uri ./mlruns
+```
+
+Acesse [http://localhost:5000](http://localhost:5000) no navegador para explorar os resultados.
+
+Se desejar customizar o tracking URI, edite a função de configuração do MLflow no código.
 
