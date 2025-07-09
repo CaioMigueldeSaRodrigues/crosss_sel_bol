@@ -1,5 +1,9 @@
 # run_pipeline.py - Orquestrador Principal do Projeto
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 import yaml
 import pandas as pd
 import sys
