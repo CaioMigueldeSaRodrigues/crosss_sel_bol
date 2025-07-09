@@ -4,15 +4,14 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, collect_list
 from pyspark.ml.fpm import FPGrowth
 
-def gerar_regras_associacao(spark: SparkSession, faturamento_df, min_support=0.01, min_confidence=0.1):
+def gerar_regras_associacao(spark: SparkSession, faturamento_df, config):
     """
     Usa o algoritmo FP-Growth para minerar regras de associação a partir dos dados de faturamento.
 
     Args:
         spark (SparkSession): A sessão Spark ativa.
         faturamento_df (DataFrame): DataFrame de faturamento, já filtrado.
-        min_support (float): O suporte mínimo para um itemset ser considerado frequente.
-        min_confidence (float): A confiança mínima para uma regra ser gerada.
+        config (dict): Dicionário de configuração com parâmetros do FP-Growth.
 
     Returns:
         DataFrame: Um DataFrame com as novas regras geradas (antecedent, consequent, confidence).
@@ -26,8 +25,9 @@ def gerar_regras_associacao(spark: SparkSession, faturamento_df, min_support=0.0
     )
 
     # 2. Treinar o modelo FP-Growth
-    print(f"[IA] Treinando modelo FP-Growth com min_support={min_support} e min_confidence={min_confidence}...")
-    fp_growth = FPGrowth(itemsCol="items", minSupport=min_support, minConfidence=min_confidence)
+    params_ia = config['modelo_ia']
+    print(f"[IA] Treinando modelo FP-Growth com min_support={params_ia['min_support']} e min_confidence={params_ia['min_confidence']}...")
+    fp_growth = FPGrowth(itemsCol="items", minSupport=params_ia['min_support'], minConfidence=params_ia['min_confidence'])
     model = fp_growth.fit(cestas_df)
 
     # 3. Extrair as regras de associação

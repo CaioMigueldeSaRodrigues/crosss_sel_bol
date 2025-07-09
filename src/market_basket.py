@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, lit
 from src.association_rules import gerar_regras_associacao # Importação adicionada
 
-def executar_analise_cesta(spark: SparkSession):
+def executar_analise_cesta(spark: SparkSession, config):
     """
     Executa o pipeline de análise de cesta de compras (market basket analysis).
     """
@@ -12,19 +12,24 @@ def executar_analise_cesta(spark: SparkSession):
 
     # 1. Carregar Tabelas e Aplicar Filtros
     print("[ETAPA 1/4] Carregando e filtrando tabelas...")
-    faturamento = spark.table("bol.faturamento_centros_bol")
-    produtos = spark.table("bol.produtos_site")
+    tabelas = config['tabelas']
+    filtros = config['filtros']
+
+    faturamento = spark.table(tabelas['faturamento'])
+    produtos = spark.table(tabelas['produtos'])
 
     faturamento_filtrado = faturamento.filter(
-        (col("CENTRO") == 102) & (col("QTDE") > 3) & (col("CATEGORIA") == "VAREJO")
+        (col("CENTRO") == filtros['centro']) &
+        (col("QTDE") > filtros['qtde_minima']) &
+        (col("CATEGORIA") == filtros['categoria'])
     )
     produtos_filtrado = produtos.filter(
-        (col("CENTRO") == 102) & (col("CATEGORIA") == "VAREJO")
+        (col("CENTRO") == filtros['centro']) & (col("CATEGORIA") == filtros['categoria'])
     )
     
     # 2. MÓDULO DE IA: Gerar novas regras de associação
     # Usamos o faturamento já filtrado para treinar o modelo
-    regras_ia = gerar_regras_associacao(spark, faturamento_filtrado)
+    regras_ia = gerar_regras_associacao(spark, faturamento_filtrado, config)
     
     # Renomear colunas para evitar conflito no join
     regras = regras_ia.withColumnRenamed("antecedent_ia", "antecedent") \

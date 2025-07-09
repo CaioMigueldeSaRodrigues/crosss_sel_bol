@@ -15,7 +15,7 @@ Este projeto implementa um sistema de análise de cesta de compras (market baske
 │   ├── market_basket.py
 │   ├── association_rules.py
 │   └── ...
-├── config.yaml                   # Configuração de caminhos e parâmetros
+├── config.yaml                   # Configuração centralizada de tabelas, filtros, caminhos e parâmetros de IA
 ├── requirements.txt              # Dependências Python
 ├── runtime.txt                   # Versão recomendada do Python
 └── data/                        # Dados de entrada (definidos em config.yaml)
@@ -28,7 +28,12 @@ Este projeto implementa um sistema de análise de cesta de compras (market baske
    pip install -r requirements.txt
    ```
 
-2. **(Opcional) Configure os caminhos dos dados em `config.yaml` se necessário.**
+2. **Configure todos os parâmetros e caminhos em `config.yaml`:**
+   - Exemplo de seções:
+     - tabelas: nomes das tabelas de faturamento e produtos
+     - filtros: centro, categoria, quantidade mínima
+     - caminho_saida: caminho para salvar o relatório
+     - modelo_ia: parâmetros do FP-Growth (min_support, min_confidence)
 
 3. **Execute o pipeline:**
    ```bash
@@ -36,16 +41,17 @@ Este projeto implementa um sistema de análise de cesta de compras (market baske
    ```
 
    O script irá:
-   - Carregar e filtrar os dados de vendas e produtos.
-   - Gerar regras de associação automaticamente usando FP-Growth (IA).
-   - Calcular métricas de suporte e confiança para as regras geradas.
-   - Salvar o relatório final no DBFS.
+   - Carregar e filtrar os dados de vendas e produtos conforme o config.yaml
+   - Gerar regras de associação automaticamente usando FP-Growth (IA)
+   - Calcular métricas de suporte e confiança para as regras geradas
+   - Salvar o relatório final no caminho definido no config.yaml
 
 ## Principais Funcionalidades
 
 - **Market Basket Analysis com IA:** Geração automática de regras de associação usando FP-Growth.
 - **Relatório detalhado:** Métricas de suporte, confiança e recomendações de compra casada.
 - **Pipeline automatizado:** Integração com Spark e DBFS para processamento em larga escala.
+- **Configuração centralizada:** Todos os parâmetros e caminhos relevantes são definidos no config.yaml.
 
 ## Contribuição
 
