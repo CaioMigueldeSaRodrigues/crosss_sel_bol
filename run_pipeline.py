@@ -1,96 +1,32 @@
-# run_pipeline.py - Orquestrador Principal do Projeto
+# run_pipeline.py
 
-import sys
-import os
-
-try:
-    # Tenta adicionar o diretório do arquivo atual (funciona em .py)
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    # Se __file__ não existir (ex: notebook), usa o diretório atual do processo
-    base_dir = os.getcwd()
-
-if base_dir not in sys.path:
-    sys.path.append(base_dir)
-
-import yaml
-import pandas as pd
-import mlflow
-from src.data_processing import preprocessar_dados_cliente
-from src.model_training import train_classification_model
-
-BASE_DIR = base_dir
-
-def configurar_mlflow():
-    """
-    Configura o MLflow para uso local se não estiver em ambiente Databricks.
-    """
-    try:
-        # Tenta detectar ambiente Databricks
-        import databricks_cli  # noqa: F401
-        print("Usando MLflow no Databricks.")
-    except ImportError:
-        # Fallback: usa tracking local
-        mlflow.set_tracking_uri("file://" + os.path.join(BASE_DIR, "mlruns"))
-        print("MLflow configurado para uso local em ./mlruns")
-
-def carregar_config_e_dados(config_path):
-    """
-    Carrega o arquivo de configuração e os dados de clientes e pedidos.
-    Retorna: (config, df_customers, df_orders)
-    """
-    try:
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-        customers_path = os.path.join(BASE_DIR, config['data_paths']['customers'])
-        orders_path = os.path.join(BASE_DIR, config['data_paths']['orders'])
-        df_customers = pd.read_csv(customers_path)
-        df_orders = pd.read_csv(orders_path)
-        print("[SUCCESS] Configuração e dados carregados.")
-        return config, df_customers, df_orders
-    except FileNotFoundError as e:
-        print(f"[ERROR] Arquivo não encontrado: {e}.")
-        print("[FAIL] Pipeline encerrado. Verifique o config.yaml e a pasta /data.")
-        sys.exit(1)
-
-def executar_preprocessamento(df_customers, df_orders):
-    """
-    Executa o pré-processamento dos dados e retorna o DataFrame final.
-    """
-    print("\n[ETAPA 2/3] Iniciando pré-processamento de dados...")
-    df_final = preprocessar_dados_cliente(df_customers, df_orders)
-    print("[SUCCESS] Pré-processamento concluído.")
-    return df_final
-
-def treinar_modelo(df_final, config):
-    """
-    Treina o modelo de classificação usando os dados processados e a configuração.
-    """
-    print("\n[ETAPA 3/3] Iniciando treinamento do modelo...")
-    train_classification_model(df_final, config)
-    print("[SUCCESS] Treinamento concluído.")
+from pyspark.sql import SparkSession
+from src.market_basket import executar_analise_cesta
 
 def main():
-    print("=================================================")
-    print("==    INICIANDO EXECUÇÃO DO PIPELINE DE DADOS   ==")
-    print("=================================================")
+    """
+    Orquestra o pipeline de Market Basket Analysis.
+    """
+    # Inicializa a sessão Spark
+    spark = SparkSession.builder.appName("MarketBasketAnalysis").getOrCreate()
 
-    configurar_mlflow()
+    # Executa a lógica principal da análise
+    relatorio_df = executar_analise_cesta(spark)
 
-    # --- ETAPA 1: CARREGAR CONFIGURAÇÃO E DADOS ---
-    print("\n[ETAPA 1/3] Carregando configuração e dados...")
-    config_path = os.path.join(BASE_DIR, 'config.yaml')
-    config, df_customers, df_orders = carregar_config_e_dados(config_path)
+    # Exibe as 20 principais recomendações no console
+    print("\n--- Top 20 Recomendações de Compra Casada ---")
+    relatorio_df.show(20, truncate=False)
 
-    # --- ETAPA 2: PRÉ-PROCESSAMENTO ---
-    df_final = executar_preprocessamento(df_customers, df_orders)
+    # Salva o relatório final no DBFS
+    caminho_saida = "/dbfs/mnt/datalake/silver/benchmarking/basket_analysis_report"
+    print(f"\nSalvando relatório completo em: {caminho_saida}")
+    
+    # Usamos o .coalesce(1) para salvar como um único arquivo, ideal para relatórios
+    relatorio_df.coalesce(1).write.mode("overwrite").option("header", "true").csv(caminho_saida.replace("/dbfs", ""))
 
-    # --- ETAPA 3: TREINAMENTO DO MODELO ---
-    treinar_modelo(df_final, config)
+    print("--- Pipeline concluído com sucesso! ---")
+    spark.stop()
 
-    print("\n=================================================")
-    print("==    PIPELINE FINALIZADO COM SUCESSO          ==")
-    print("=================================================")
 
 if __name__ == "__main__":
     main() 
