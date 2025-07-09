@@ -16,3 +16,4 @@ filtros:
 
 # Caminho para salvar o relatório final no DBFS
 caminho_saida: /mnt/datalake/silver/benchmarking/basket_analysis_report 
+caminho_saida_kpi: /mnt/datalake/gold/kpi_power_bi/market_basket_analysis 

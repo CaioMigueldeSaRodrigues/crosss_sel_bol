@@ -1,37 +1,55 @@
 # run_pipeline.py
 
-import yaml
 from pyspark.sql import SparkSession
-from src.market_basket import executar_analise_cesta
+import yaml
+from src.association_rules import gerar_regras_associacao
+from KPI_BI.power_bi_export import gerar_kpis_para_power_bi # Nova importação
+from pyspark.sql.functions import col # Adicionado para usar col()
 
 def main():
     """
-    Orquestra o pipeline de Market Basket Analysis.
+    Orquestra o pipeline de Market Basket Analysis e gera saída para o Power BI.
     """
-    # Inicializa a sessão Spark
-    spark = SparkSession.builder.appName("MarketBasketAnalysis").getOrCreate()
+    spark = SparkSession.builder.appName("MarketBasketAnalysis_BI").getOrCreate()
 
-    # Carrega as configurações do projeto
+    # Carregar configurações
     with open('config.yaml', 'r') as file:
         config = yaml.safe_load(file)
-
-    # Executa a lógica principal da análise
-    relatorio_df = executar_analise_cesta(spark, config)
-
-    # Exibe as 20 principais recomendações no console
-    print("\n--- Top 20 Recomendações de Compra Casada ---")
-    relatorio_df.show(20, truncate=False)
-
-    # Salva o relatório final no DBFS
-    caminho_saida = config['caminho_saida']
-    print(f"\nSalvando relatório completo em: {caminho_saida}")
     
-    # Usamos o .coalesce(1) para salvar como um único arquivo, ideal para relatórios
-    relatorio_df.coalesce(1).write.mode("overwrite").option("header", "true").csv(caminho_saida.replace("/dbfs", ""))
+    tabelas = config['tabelas']
+    filtros = config['filtros']
+    caminho_saida_kpi = config['caminho_saida_kpi'] # Novo caminho do config
 
+    # ETAPA 1: Carregar e Filtrar Dados
+    faturamento = spark.table(tabelas['faturamento'])
+    produtos = spark.table(tabelas['produtos'])
+    faturamento_filtrado = faturamento.filter(
+        (col("CENTRO") == filtros['centro']) &
+        (col("QTDE") > filtros['qtde_minima']) &
+        (col("CATEGORIA") == filtros['categoria'])
+    )
+    produtos_filtrado = produtos.filter(
+        (col("CENTRO") == filtros['centro']) &
+        (col("CATEGORIA") == filtros['categoria'])
+    )
+    faturamento_filtrado.cache() # Cache para reuso
+
+    # ETAPA 2: Módulo de IA - Gerar Regras
+    regras_ia = gerar_regras_associacao(spark, faturamento_filtrado, config)
+
+    # ETAPA 3: Módulo de BI - Gerar KPIs
+    kpis_df = gerar_kpis_para_power_bi(spark, faturamento_filtrado, regras_ia, produtos_filtrado)
+    
+    print("\n--- Amostra dos KPIs para Power BI (Ordenado por Lift) ---")
+    kpis_df.show(20, truncate=False)
+
+    # ETAPA 4: Salvar Saída em Parquet
+    print(f"\nSalvando KPIs em formato Parquet em: {caminho_saida_kpi}")
+    kpis_df.coalesce(1).write.mode("overwrite").parquet(caminho_saida_kpi.replace("/dbfs", ""))
+
+    faturamento_filtrado.unpersist()
     print("--- Pipeline concluído com sucesso! ---")
     spark.stop()
-
 
 if __name__ == "__main__":
     main() 
