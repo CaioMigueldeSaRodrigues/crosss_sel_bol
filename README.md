@@ -1,6 +1,6 @@
 # Product Recommendation System
 
-Este projeto implementa um sistema de recomendação de produtos, com foco em cross-selling, produtos similares e promoções.
+Este projeto implementa um sistema de análise de cesta de compras (market basket analysis) com geração de regras de associação via IA (FP-Growth).
 
 ## Requisitos de Ambiente
 
@@ -10,10 +10,10 @@ Este projeto implementa um sistema de recomendação de produtos, com foco em cr
 ## Estrutura do Projeto
 
 ```
-├── run_pipeline.py               # Orquestrador principal do pipeline de dados e modelo
-├── src/                         # Código-fonte (processamento, modelos, utilitários)
-│   ├── data_processing.py
-│   ├── model_training.py
+├── run_pipeline.py               # Orquestrador principal do pipeline de análise de cesta
+├── src/                         # Código-fonte (market basket, regras de associação, etc.)
+│   ├── market_basket.py
+│   ├── association_rules.py
 │   └── ...
 ├── config.yaml                   # Configuração de caminhos e parâmetros
 ├── requirements.txt              # Dependências Python
@@ -28,16 +28,7 @@ Este projeto implementa um sistema de recomendação de produtos, com foco em cr
    pip install -r requirements.txt
    ```
 
-2. **Configure os caminhos dos dados em `config.yaml`:**
-   - Exemplo:
-     ```yaml
-     data_paths:
-       customers: data/customers.csv
-       orders: data/orders.csv
-     model_params:
-       test_size: 0.2
-       random_state: 42
-     ```
+2. **(Opcional) Configure os caminhos dos dados em `config.yaml` se necessário.**
 
 3. **Execute o pipeline:**
    ```bash
@@ -45,16 +36,16 @@ Este projeto implementa um sistema de recomendação de produtos, com foco em cr
    ```
 
    O script irá:
-   - Carregar configurações e dados.
-   - Realizar pré-processamento.
-   - Treinar o modelo de classificação.
-   - Logar resultados no MLflow.
+   - Carregar e filtrar os dados de vendas e produtos.
+   - Gerar regras de associação automaticamente usando FP-Growth (IA).
+   - Calcular métricas de suporte e confiança para as regras geradas.
+   - Salvar o relatório final no DBFS.
 
 ## Principais Funcionalidades
 
-- **Cross-Selling:** Identifica clientes com potencial para novas compras.
-- **Pré-processamento robusto:** Limpeza e preparação dos dados.
-- **Treinamento automatizado:** Pipeline de machine learning integrado ao MLflow.
+- **Market Basket Analysis com IA:** Geração automática de regras de associação usando FP-Growth.
+- **Relatório detalhado:** Métricas de suporte, confiança e recomendações de compra casada.
+- **Pipeline automatizado:** Integração com Spark e DBFS para processamento em larga escala.
 
 ## Contribuição
 
@@ -81,19 +72,4 @@ pytest tests/
 ```
 
 Certifique-se de que todas as dependências estejam instaladas antes de rodar os testes.
-
-## MLflow: Rastreamento de Experimentos
-
-O pipeline utiliza o MLflow para rastreamento de experimentos de machine learning.
-
-- **No Databricks:** O MLflow já está integrado e não requer configuração adicional.
-- **Localmente:** O código faz fallback automático para tracking local em `./mlruns`. Para visualizar os experimentos, execute:
-
-```bash
-mlflow ui --backend-store-uri ./mlruns
-```
-
-Acesse [http://localhost:5000](http://localhost:5000) no navegador para explorar os resultados.
-
-Se desejar customizar o tracking URI, edite a função de configuração do MLflow no código.
 
