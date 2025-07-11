@@ -6,7 +6,7 @@ from pyspark.sql.functions import col
 from src.association_rules import gerar_regras_associacao
 from KPI_BI.power_bi_export import gerar_kpis_para_power_bi
 from src.marketing_list import gerar_lista_de_marketing
-from KPI_BI.geospatial_temporal_analysis import analisar_padroes_geograficos_temporais # Nova importação
+from KPI_BI.geospatial_temporal_analysis import analisar_padroes_geograficos_temporais #Nova importação
 
 def main():
     spark = SparkSession.builder.appName("Full_Recommendation_Pipeline").getOrCreate()
