@@ -27,11 +27,13 @@ DBFS_EXPORTS_PATH = f"{DBFS_BASE_PATH}/exports"
 DBFS_LOGS_PATH = f"{DBFS_BASE_PATH}/logs"
 
 # Configurações do Catálogo
-CATALOG_NAME = "bol"
-SOURCE_TABLE = f"{CATALOG_NAME}.feed_varejo_vtex"
-MAGALU_RAW_TABLE = f"{CATALOG_NAME}.raw_magalu_products"
-MAGALU_PROCESSED_TABLE = f"{CATALOG_NAME}.processed_magalu_products"
-PRODUCT_MATCHES_TABLE = f"{CATALOG_NAME}.product_matches"
+CATALOG_NAME = "benchmarking"
+BRONZE_SCHEMA = "bronze"
+SILVER_SCHEMA = "silver"
+GOLD_SCHEMA = "gold"
+
+PRODUCT_TABLE_BRONZE = f"{CATALOG_NAME}.{BRONZE_SCHEMA}.products"
+PRODUCT_TABLE_SILVER = f"{CATALOG_NAME}.{SILVER_SCHEMA}.products"
 
 # Configurações de Processamento
 PROCESSING_CONFIG = {
@@ -114,3 +116,17 @@ STORAGE_CONFIG = {
         "matches": PRODUCT_MATCHES_TABLE
     }
 }
+
+# DATA STORAGE & PATHS
+SOURCE_TABLE = f"{CATALOG_NAME}.feed_varejo_vtex"
+MAGALU_RAW_TABLE = f"{CATALOG_NAME}.raw_magalu_products"
+MAGALU_PROCESSED_TABLE = f"{CATALOG_NAME}.processed_magalu_products"
+PRODUCT_MATCHES_TABLE = f"{CATALOG_NAME}.product_matches"
+
+# SCRAPING CONFIG
+BASE_URL = "http://some-ecommerce-site.com/products"
+REQUESTS_TIMEOUT_SECONDS = 20
+DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
+# NLP MODEL CONFIG
+SENTENCE_TRANSFORMER_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
